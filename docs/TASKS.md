@@ -6,7 +6,7 @@
 
 - [x] Tarefa 1: Setup Next.js + Supabase Client
 - [x] Tarefa 2: Autenticação (Supabase Auth)
-- [ ] **Tarefa 3: Vincular Auth → Client + habilitar RLS** ← EM PROGRESSO
+- [x] Tarefa 3: Vincular Auth → Client + habilitar RLS
 - [ ] Tarefa 4: UI Shell — Layout, Sidebar, Tema Dark
 - [ ] Tarefa 5: CRUD de Instituições
 - [ ] Tarefa 6: CRUD de Renda Fixa
@@ -51,17 +51,18 @@ T1 (Setup) ──→ T2 (Auth) ──→ T3 (Auth→Client + RLS)
 ## Detalhes por Tarefa
 
 ### Tarefa 3: Vincular Auth → Client + habilitar RLS
-**Status:** Em progresso
-**O que fazer:**
-1. Migration SQL via MCP Supabase:
-   - Adicionar coluna `auth_user_id uuid UNIQUE` em `finance.client` → referencia `auth.users(id)`
-   - Criar função `finance.handle_new_user()` que insere em `finance.client` com dados do `auth.users`
-   - Criar trigger `on_auth_user_created` em `auth.users` AFTER INSERT
-   - Criar function `finance.current_client_id()` que retorna o `client_id` do usuário autenticado
-   - Habilitar RLS em TODAS as tabelas do schema `finance`
-   - Criar policies:
-     - `client`: `auth.uid() = auth_user_id`
-     - Demais: `client_id = finance.current_client_id()`
+**Status:** Concluída ✓
+**O que foi feito (migration `task_03_auth_client_rls`):**
+- Coluna `auth_user_id uuid UNIQUE` adicionada em `finance.client` → referencia `auth.users(id)`
+- Função `finance.handle_new_user()` criada — insere `finance.client` automaticamente no registro
+- Trigger `on_auth_user_created` em `auth.users` AFTER INSERT
+- Função `finance.current_client_id()` — retorna `client_id` do usuário autenticado (SECURITY DEFINER)
+- RLS habilitado nas 12 tabelas do schema `finance`
+- Policies FOR ALL criadas em todas as tabelas:
+  - `client`: `auth.uid() = auth_user_id`
+  - Tabelas com `client_id` direto: `client_id = finance.current_client_id()`
+  - `transaction`: via subquery em `finance.account`
+  - `re_category_transaction`: via subquery em `finance.transaction → finance.account`
 
 **Supabase project:** `npnjuwgjookorrqcspej`
 
