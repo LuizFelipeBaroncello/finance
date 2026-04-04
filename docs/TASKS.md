@@ -7,7 +7,7 @@
 - [x] Tarefa 1: Setup Next.js + Supabase Client
 - [x] Tarefa 2: Autenticação (Supabase Auth)
 - [x] Tarefa 3: Vincular Auth → Client + habilitar RLS
-- [ ] Tarefa 4: UI Shell — Layout, Sidebar, Tema Dark
+- [x] Tarefa 4: UI Shell — Layout, Sidebar, Tema Dark
 - [ ] Tarefa 5: CRUD de Instituições
 - [ ] Tarefa 6: CRUD de Renda Fixa
 - [ ] Tarefa 7: CRUD de Renda Variável
