@@ -8,15 +8,15 @@
 - [x] Tarefa 2: Autenticação (Supabase Auth)
 - [x] Tarefa 3: Vincular Auth → Client + habilitar RLS
 - [x] Tarefa 4: UI Shell — Layout, Sidebar, Tema Dark
-- [ ] Tarefa 5: CRUD de Instituições
-- [ ] Tarefa 6: CRUD de Renda Fixa
-- [ ] Tarefa 7: CRUD de Renda Variável
-- [ ] Tarefa 8: CRUD de Imóveis
-- [ ] Tarefa 9: CRUD de Veículos
-- [ ] Tarefa 10: CRUD de Passivos + Pagamentos
-- [ ] Tarefa 11: CRUD de Transações, Contas e Categorias
-- [ ] Tarefa 12: Dashboard — Visão Geral do Patrimônio
-- [ ] Tarefa 13: Deploy na Vercel
+- [x] Tarefa 5: CRUD de Instituições
+- [x] Tarefa 6: CRUD de Renda Fixa
+- [x] Tarefa 7: CRUD de Renda Variável
+- [x] Tarefa 8: CRUD de Imóveis
+- [x] Tarefa 9: CRUD de Veículos
+- [x] Tarefa 10: CRUD de Passivos + Pagamentos
+- [x] Tarefa 11: CRUD de Transações, Contas e Categorias
+- [x] Tarefa 12: Dashboard — Visão Geral do Patrimônio
+- [x] Tarefa 13: Deploy na Vercel
 
 ## Dependências
 
@@ -186,6 +186,15 @@ T1 (Setup) ──→ T2 (Auth) ──→ T3 (Auth→Client + RLS)
 4. Configurar redirect URLs no Supabase Auth Dashboard
 5. `vercel deploy` → preview
 6. `vercel --prod` → produção
+
+**Arquivos de configuração criados:**
+- `vercel.json` — configuração do framework Next.js para a Vercel
+- `.env.example` — variáveis de ambiente necessárias (copiar para `.env.local`)
+
+**Variáveis de ambiente necessárias na Vercel:**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL`
 
 ---
 
