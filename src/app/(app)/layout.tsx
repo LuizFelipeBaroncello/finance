@@ -17,6 +17,15 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  const { data: client } = await supabase.from("client").select("client_id").maybeSingle();
+  if (!client) {
+    await supabase.from("client").insert({
+      client_name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Usuário",
+      email: user.email!,
+      auth_user_id: user.id,
+    });
+  }
+
   const userName =
     user.user_metadata?.full_name ??
     user.email?.split("@")[0] ??

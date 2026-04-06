@@ -6,7 +6,7 @@ const formatBRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 const formatDate = (date: string) =>
-  new Date(date + "T00:00:00").toLocaleDateString("pt-BR")
+  new Date(date.replace(" ", "T")).toLocaleDateString("pt-BR")
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -223,8 +223,8 @@ export default async function DashboardPage() {
                               tx.type === "credit" ? "text-green-400" : "text-red-400"
                             }`}
                           >
-                            {tx.type === "debit" ? "- " : ""}
-                            {formatBRL(tx.amount)}
+                            {tx.type === "debit" ? "-" : "+"}
+                            {formatBRL(Math.abs(tx.amount))}
                           </td>
                         </tr>
                       )

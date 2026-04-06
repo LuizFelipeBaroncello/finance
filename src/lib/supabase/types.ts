@@ -17,6 +17,7 @@ export type Database = {
           client_id: number
           client_name: string
           email: string
+          auth_user_id: string | null
           created_at: string
           updated_at: string
         }
@@ -24,6 +25,7 @@ export type Database = {
           client_id?: number
           client_name: string
           email: string
+          auth_user_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -31,6 +33,7 @@ export type Database = {
           client_id?: number
           client_name?: string
           email?: string
+          auth_user_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -42,6 +45,7 @@ export type Database = {
           account_name: string
           description: string
           client_id: number
+          institution_id: number
           created_at: string
           updated_at: string
         }
@@ -50,6 +54,7 @@ export type Database = {
           account_name: string
           description: string
           client_id: number
+          institution_id: number
           created_at?: string
           updated_at?: string
         }
@@ -58,6 +63,7 @@ export type Database = {
           account_name?: string
           description?: string
           client_id?: number
+          institution_id?: number
           created_at?: string
           updated_at?: string
         }
@@ -67,6 +73,12 @@ export type Database = {
             columns: ["client_id"]
             referencedRelation: "client"
             referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "fk_account_institution"
+            columns: ["institution_id"]
+            referencedRelation: "institution"
+            referencedColumns: ["institution_id"]
           }
         ]
       }

@@ -12,22 +12,39 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createAccount, updateAccount, deleteAccount } from "../actions"
+
+type Institution = {
+  institution_id: number
+  name: string
+}
 
 type Account = {
   account_id: number
   account_name: string
   description: string
+  institution_id: number
 }
 
 interface AccountFormProps {
   account?: Account
+  institutions: Institution[]
 }
 
-export function AccountForm({ account }: AccountFormProps) {
+export function AccountForm({ account, institutions }: AccountFormProps) {
   const isEditing = !!account
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [institutionId, setInstitutionId] = useState<string>(
+    account?.institution_id?.toString() ?? ""
+  )
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(formData: FormData) {
@@ -75,12 +92,31 @@ export function AccountForm({ account }: AccountFormProps) {
           <form action={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">
+                Instituição
+              </label>
+              <Select value={institutionId} onValueChange={setInstitutionId} required>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione a instituição" />
+                </SelectTrigger>
+                <SelectContent>
+                  {institutions.map((inst) => (
+                    <SelectItem key={inst.institution_id} value={inst.institution_id.toString()}>
+                      {inst.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <input type="hidden" name="institution_id" value={institutionId} />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">
                 Nome da Conta
               </label>
               <Input
                 name="account_name"
                 defaultValue={account?.account_name ?? ""}
-                placeholder="Ex: Nubank, Conta Corrente..."
+                placeholder="Ex: Conta Corrente, Poupança..."
                 required
               />
             </div>

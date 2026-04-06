@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -8,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
@@ -37,6 +39,8 @@ function getInitials(name: string) {
 
 export function Header({ userName, userEmail }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <header className="flex h-14 items-center gap-3 border-b border-border bg-background px-4 lg:px-6 sticky top-0 z-10">
@@ -69,23 +73,25 @@ export function Header({ userName, userEmail }: HeaderProps) {
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="bottom" sideOffset={6}>
-            <DropdownMenuLabel className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-foreground">
-                {userName}
-              </span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {userEmail}
-              </span>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium text-foreground">
+                  {userName}
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {userEmail}
+                </span>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/profile")}>
               <User className="size-4" />
               Perfil
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              onSelect={() => logout()}
+              onClick={() => startTransition(() => logout())}
             >
               <LogOut className="size-4" />
               Sair

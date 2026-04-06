@@ -11,6 +11,7 @@ export async function createAccount(formData: FormData) {
     client_id: client.client_id,
     account_name: formData.get("account_name") as string,
     description: (formData.get("description") as string) || "",
+    institution_id: Number(formData.get("institution_id")),
   })
   if (error) return { error: error.message }
   revalidatePath("/accounts")
@@ -21,6 +22,7 @@ export async function updateAccount(id: number, formData: FormData) {
   const { error } = await supabase.from("account").update({
     account_name: formData.get("account_name") as string,
     description: (formData.get("description") as string) || "",
+    institution_id: Number(formData.get("institution_id")),
   }).eq("account_id", id)
   if (error) return { error: error.message }
   revalidatePath("/accounts")

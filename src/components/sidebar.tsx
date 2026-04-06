@@ -13,6 +13,9 @@ import {
   Building2,
   ChevronDown,
   Coins,
+  Wallet,
+  Tag,
+  BarChart2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +50,16 @@ const NAV: NavItem[] = [
   },
   { label: "Passivos", href: "/liabilities", icon: CreditCard },
   { label: "Transações", href: "/transactions", icon: ArrowLeftRight },
-  { label: "Instituições", href: "/institutions", icon: Building2 },
+  { label: "Analytics", href: "/analytics", icon: BarChart2 },
+  {
+    label: "Configurações",
+    icon: Building2,
+    children: [
+      { label: "Instituições", href: "/institutions", icon: Building2 },
+      { label: "Contas", href: "/accounts", icon: Wallet },
+      { label: "Categorias", href: "/categories", icon: Tag },
+    ],
+  },
 ];
 
 function NavLink({

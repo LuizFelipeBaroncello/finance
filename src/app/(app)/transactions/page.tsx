@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TransactionForm } from "./components/transaction-form"
+import { MonthPicker } from "./components/month-picker"
 import Link from "next/link"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -28,11 +29,19 @@ const TYPE_VARIANTS: Record<string, "destructive" | "default" | "secondary"> = {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
-export default async function TransactionsPage() {
+export default async function TransactionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>
+}) {
   const supabase = await createClient()
 
+  const { month } = await searchParams
   const now = new Date()
-  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
+  const selectedMonth = month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+  const [year, mon] = selectedMonth.split("-").map(Number)
+  const firstOfMonth = `${selectedMonth}-01`
+  const firstOfNextMonth = new Date(year, mon, 1).toISOString().split("T")[0]
 
   const [
     { data: transactions },
@@ -43,8 +52,9 @@ export default async function TransactionsPage() {
     supabase
       .from("transaction")
       .select("*, account(account_name), re_category_transaction(category_id, category(category_name))")
-      .order("date", { ascending: false })
-      .limit(100),
+      .gte("date", firstOfMonth)
+      .lt("date", firstOfNextMonth)
+      .order("date", { ascending: false }),
     supabase
       .from("account")
       .select("account_id, account_name")
@@ -56,16 +66,17 @@ export default async function TransactionsPage() {
     supabase
       .from("transaction")
       .select("amount, type")
-      .gte("date", firstOfMonth),
+      .gte("date", firstOfMonth)
+      .lt("date", firstOfNextMonth),
   ])
 
   const totalReceitas = (monthTransactions ?? [])
     .filter((t) => t.type === "credit")
-    .reduce((sum, t) => sum + (t.amount ?? 0), 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0)
 
   const totalDespesas = (monthTransactions ?? [])
     .filter((t) => t.type === "debit")
-    .reduce((sum, t) => sum + (t.amount ?? 0), 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0)
 
   const saldoMes = totalReceitas - totalDespesas
 
@@ -86,10 +97,13 @@ export default async function TransactionsPage() {
           </span>
         }
         action={
-          <TransactionForm
-            accounts={accounts ?? []}
-            categories={categories ?? []}
-          />
+          <div className="flex items-center gap-3">
+            <MonthPicker value={selectedMonth} />
+            <TransactionForm
+              accounts={accounts ?? []}
+              categories={categories ?? []}
+            />
+          </div>
         }
       />
 
@@ -163,7 +177,7 @@ export default async function TransactionsPage() {
               return (
                 <TableRow key={tx.trans_id}>
                   <TableCell className="text-muted-foreground whitespace-nowrap">
-                    {new Date(tx.date + "T00:00:00").toLocaleDateString("pt-BR")}
+                    {new Date(tx.date.replace(" ", "T")).toLocaleDateString("pt-BR")}
                   </TableCell>
                   <TableCell className="font-medium">{tx.description}</TableCell>
                   <TableCell
@@ -176,7 +190,7 @@ export default async function TransactionsPage() {
                     }`}
                   >
                     {tx.type === "credit" ? "+" : tx.type === "debit" ? "-" : ""}
-                    {formatCurrency(tx.amount ?? 0)}
+                    {formatCurrency(Math.abs(tx.amount ?? 0))}
                   </TableCell>
                   <TableCell>
                     <Badge variant={TYPE_VARIANTS[tx.type] ?? "secondary"}>
