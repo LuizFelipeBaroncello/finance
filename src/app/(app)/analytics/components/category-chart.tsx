@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import {
   BarChart,
   Bar,
@@ -25,7 +26,23 @@ const formatShort = (value: number) => {
   return `R$ ${value.toFixed(0)}`
 }
 
+const LABELS: Record<string, string> = {
+  debito: "Débito",
+  credito: "Crédito",
+}
+
 export function CategoryChart({ data }: { data: CategoryData[] }) {
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+
+  const handleLegendClick = useCallback((dataKey: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (next.has(dataKey)) next.delete(dataKey)
+      else next.add(dataKey)
+      return next
+    })
+  }, [])
+
   if (data.length === 0) {
     return (
       <div className="flex h-[320px] items-center justify-center text-muted-foreground text-sm">
@@ -72,14 +89,22 @@ export function CategoryChart({ data }: { data: CategoryData[] }) {
         <Legend
           iconType="circle"
           iconSize={8}
+          onClick={(e) => handleLegendClick(e.dataKey as string)}
           formatter={(value) => (
-            <span style={{ color: "#a1a1aa", fontSize: 12 }}>
-              {value === "debito" ? "Débito" : "Crédito"}
+            <span
+              style={{
+                color: hidden.has(value) ? "#52525b" : "#a1a1aa",
+                fontSize: 12,
+                cursor: "pointer",
+                textDecoration: hidden.has(value) ? "line-through" : "none",
+              }}
+            >
+              {LABELS[value] ?? value}
             </span>
           )}
         />
-        <Bar dataKey="debito" name="debito" fill="#ef4444" radius={[0, 4, 4, 0]} />
-        <Bar dataKey="credito" name="credito" fill="#22c55e" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="debito" name="debito" fill="#ef4444" radius={[0, 4, 4, 0]} hide={hidden.has("debito")} />
+        <Bar dataKey="credito" name="credito" fill="#22c55e" radius={[0, 4, 4, 0]} hide={hidden.has("credito")} />
       </BarChart>
     </ResponsiveContainer>
   )

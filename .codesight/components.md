@@ -1,0 +1,41 @@
+# Components
+
+- **AccountForm** [client] — props: account, institutions — `src/app/(app)/accounts/components/account-form.tsx`
+- **AccountsPage** — `src/app/(app)/accounts/page.tsx`
+- **AccountChart** [client] — props: data — `src/app/(app)/analytics/components/account-chart.tsx`
+- **AnalyticsDashboard** [client] — props: transactions, categories, granularity — `src/app/(app)/analytics/components/analytics-dashboard.tsx`
+- **CategoryChart** [client] — props: data — `src/app/(app)/analytics/components/category-chart.tsx`
+- **EvolutionChart** [client] — props: data — `src/app/(app)/analytics/components/evolution-chart.tsx`
+- **PeriodFilter** [client] — props: startDate, endDate, granularity — `src/app/(app)/analytics/components/period-filter.tsx`
+- **SeriesEvolutionChart** [client] — props: data, seriesKeys — `src/app/(app)/analytics/components/series-evolution-chart.tsx`
+- **TransactionList** [client] — props: transactions, categories, search, onSearchChange, categoryFilter, onCategoryFilterChange, hiddenIds, onToggleHidden, onClearHidden — `src/app/(app)/analytics/components/transaction-list.tsx`
+- **TypeChart** [client] — props: data — `src/app/(app)/analytics/components/type-chart.tsx`
+- **AnalyticsPage** — props: searchParams — `src/app/(app)/analytics/page.tsx`
+- **CategoryForm** [client] — props: category, categories — `src/app/(app)/categories/components/category-form.tsx`
+- **CategoriesPage** — `src/app/(app)/categories/page.tsx`
+- **DashboardPage** — `src/app/(app)/dashboard/page.tsx`
+- **PatrimonyChart** [client] — props: data — `src/app/(app)/dashboard/patrimony-chart.tsx`
+- **FixedIncomeForm** [client] — props: fixedIncome, institutions — `src/app/(app)/fixed-income/components/fixed-income-form.tsx`
+- **FixedIncomePage** — `src/app/(app)/fixed-income/page.tsx`
+- **InstitutionForm** [client] — props: institution — `src/app/(app)/institutions/components/institution-form.tsx`
+- **InstitutionsPage** — `src/app/(app)/institutions/page.tsx`
+- **AppLayout** — `src/app/(app)/layout.tsx`
+- **ProfilePage** — `src/app/(app)/profile/page.tsx`
+- **RealEstateForm** [client] — props: realEstate — `src/app/(app)/real-estate/components/real-estate-form.tsx`
+- **RealEstatePage** — `src/app/(app)/real-estate/page.tsx`
+- **MonthPicker** [client] — props: value — `src/app/(app)/transactions/components/month-picker.tsx`
+- **TransactionForm** [client] — props: transaction, accounts, categories — `src/app/(app)/transactions/components/transaction-form.tsx`
+- **TransactionsPage** — props: searchParams — `src/app/(app)/transactions/page.tsx`
+- **VariableIncomeForm** [client] — props: variableIncome, institutions — `src/app/(app)/variable-income/components/variable-income-form.tsx`
+- **VariableIncomePage** — `src/app/(app)/variable-income/page.tsx`
+- **VehicleForm** [client] — props: vehicle — `src/app/(app)/vehicles/components/vehicle-form.tsx`
+- **VehiclesPage** — `src/app/(app)/vehicles/page.tsx`
+- **ForgotPasswordPage** [client] — `src/app/(auth)/forgot-password/page.tsx`
+- **AuthLayout** — `src/app/(auth)/layout.tsx`
+- **LoginPage** [client] — `src/app/(auth)/login/page.tsx`
+- **RegisterPage** [client] — `src/app/(auth)/register/page.tsx`
+- **RootLayout** — `src/app/layout.tsx`
+- **Home** — `src/app/page.tsx`
+- **Header** [client] — props: userName, userEmail — `src/components/header.tsx`
+- **PageHeader** — props: title, description, action, className — `src/components/page-header.tsx`
+- **Providers** [client] — `src/components/providers.tsx`

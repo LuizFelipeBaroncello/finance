@@ -3,31 +3,37 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import { useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+function getGranularityOptions(startDate: string, endDate: string) {
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  const diffDays = Math.round((end.getTime() - start.getTime()) / 86400000)
 
-const GRANULARITY_BY_PERIOD: Record<string, { label: string; value: string }[]> = {
-  month: [{ label: "Diário", value: "daily" }],
-  quarter: [
-    { label: "Diário", value: "daily" },
-    { label: "Semanal", value: "weekly" },
-  ],
-  year: [
+  if (diffDays <= 31) return [{ label: "Diário", value: "daily" }]
+  if (diffDays <= 93)
+    return [
+      { label: "Diário", value: "daily" },
+      { label: "Semanal", value: "weekly" },
+    ]
+  return [
     { label: "Semanal", value: "weekly" },
     { label: "Mensal", value: "monthly" },
-  ],
+  ]
+}
+
+function getDefaultGranularity(startDate: string, endDate: string) {
+  const options = getGranularityOptions(startDate, endDate)
+  return options[options.length - 1].value
 }
 
 interface PeriodFilterProps {
-  period: string
-  year: number
-  month: number
+  startDate: string
+  endDate: string
   granularity: string
 }
 
-export function PeriodFilter({ period, year, month, granularity }: PeriodFilterProps) {
+export function PeriodFilter({ startDate, endDate, granularity }: PeriodFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -42,86 +48,102 @@ export function PeriodFilter({ period, year, month, granularity }: PeriodFilterP
     [router, searchParams]
   )
 
-  function defaultGranularity(p: string) {
-    if (p === "month") return "daily"
-    if (p === "quarter") return "weekly"
-    return "monthly"
-  }
+  const granularityOptions = getGranularityOptions(startDate, endDate)
+
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, "0")
+
+  const shortcuts = [
+    {
+      label: "Mês",
+      getRange: () => {
+        const lastDay = new Date(yyyy, today.getMonth() + 1, 0).getDate()
+        return {
+          startDate: `${yyyy}-${mm}-01`,
+          endDate: `${yyyy}-${mm}-${String(lastDay).padStart(2, "0")}`,
+        }
+      },
+    },
+    {
+      label: "Trimestre",
+      getRange: () => {
+        const q = Math.floor(today.getMonth() / 3)
+        const sm = q * 3 + 1
+        const em = sm + 2
+        const lastDay = new Date(yyyy, em, 0).getDate()
+        return {
+          startDate: `${yyyy}-${String(sm).padStart(2, "0")}-01`,
+          endDate: `${yyyy}-${String(em).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
+        }
+      },
+    },
+    {
+      label: "Ano",
+      getRange: () => ({
+        startDate: `${yyyy}-01-01`,
+        endDate: `${yyyy}-12-31`,
+      }),
+    },
+  ]
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Period selector */}
+      {/* Date range inputs */}
+      <div className="flex items-center gap-1.5">
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => {
+            const newStart = e.target.value
+            if (!newStart) return
+            const newGranularity = getDefaultGranularity(newStart, endDate)
+            updateParams({ startDate: newStart, granularity: newGranularity })
+          }}
+          className="h-8 rounded-md border border-border bg-background px-2 text-sm tabular-nums"
+        />
+        <span className="text-xs text-muted-foreground">até</span>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => {
+            const newEnd = e.target.value
+            if (!newEnd) return
+            const newGranularity = getDefaultGranularity(startDate, newEnd)
+            updateParams({ endDate: newEnd, granularity: newGranularity })
+          }}
+          className="h-8 rounded-md border border-border bg-background px-2 text-sm tabular-nums"
+        />
+      </div>
+
+      {/* Quick shortcuts */}
       <div className="flex items-center gap-0.5 rounded-lg border border-border p-1">
-        {(["month", "quarter", "year"] as const).map((p) => (
+        {shortcuts.map((s) => (
           <button
-            key={p}
-            onClick={() => updateParams({ period: p, granularity: defaultGranularity(p) })}
+            key={s.label}
+            onClick={() => {
+              const range = s.getRange()
+              const g = getDefaultGranularity(range.startDate, range.endDate)
+              updateParams({
+                startDate: range.startDate,
+                endDate: range.endDate,
+                granularity: g,
+              })
+            }}
             className={cn(
               "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-              period === p
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              "text-muted-foreground hover:text-foreground"
             )}
           >
-            {p === "month" ? "Mês" : p === "quarter" ? "Trimestre" : "Ano"}
+            {s.label}
           </button>
         ))}
       </div>
 
-      {/* Year selector */}
-      <div className="flex items-center gap-0.5">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          onClick={() => updateParams({ year: String(year - 1) })}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <span className="w-10 text-center text-sm font-medium tabular-nums">{year}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          onClick={() => updateParams({ year: String(year + 1) })}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-      </div>
-
-      {/* Month selector (only when period=month) */}
-      {period === "month" && (
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={() => {
-              if (month === 1) updateParams({ month: "12", year: String(year - 1) })
-              else updateParams({ month: String(month - 1) })
-            }}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <span className="w-8 text-center text-sm font-medium">{MONTHS[month - 1]}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={() => {
-              if (month === 12) updateParams({ month: "1", year: String(year + 1) })
-              else updateParams({ month: String(month + 1) })
-            }}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
-      )}
-
       {/* Granularity selector */}
-      {(GRANULARITY_BY_PERIOD[period] ?? []).length > 1 && (
+      {granularityOptions.length > 1 && (
         <div className="flex items-center gap-0.5 rounded-lg border border-border p-1">
-          {(GRANULARITY_BY_PERIOD[period] ?? []).map((opt) => (
+          {granularityOptions.map((opt) => (
             <button
               key={opt.value}
               onClick={() => updateParams({ granularity: opt.value })}

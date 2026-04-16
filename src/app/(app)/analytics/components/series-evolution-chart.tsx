@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import {
   LineChart,
   Line,
@@ -38,6 +39,17 @@ interface SeriesEvolutionChartProps {
 }
 
 export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartProps) {
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+
+  const handleLegendClick = useCallback((dataKey: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (next.has(dataKey)) next.delete(dataKey)
+      else next.add(dataKey)
+      return next
+    })
+  }, [])
+
   if (data.length === 0 || seriesKeys.length === 0) {
     return (
       <div className="flex h-[300px] items-center justify-center text-muted-foreground text-sm">
@@ -72,8 +84,18 @@ export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartP
         <Legend
           iconType="circle"
           iconSize={8}
+          onClick={(e) => handleLegendClick(e.dataKey as string)}
           formatter={(value) => (
-            <span style={{ color: "#a1a1aa", fontSize: 12 }}>{value}</span>
+            <span
+              style={{
+                color: hidden.has(value) ? "#52525b" : "#a1a1aa",
+                fontSize: 12,
+                cursor: "pointer",
+                textDecoration: hidden.has(value) ? "line-through" : "none",
+              }}
+            >
+              {value}
+            </span>
           )}
         />
         {seriesKeys.map((key, i) => (
@@ -85,6 +107,7 @@ export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartP
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4 }}
+            hide={hidden.has(key)}
           />
         ))}
       </LineChart>
