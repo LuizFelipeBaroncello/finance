@@ -31,9 +31,10 @@ interface PeriodFilterProps {
   startDate: string
   endDate: string
   granularity: string
+  basePath?: string
 }
 
-export function PeriodFilter({ startDate, endDate, granularity }: PeriodFilterProps) {
+export function PeriodFilter({ startDate, endDate, granularity, basePath = "/analytics" }: PeriodFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -43,9 +44,9 @@ export function PeriodFilter({ startDate, endDate, granularity }: PeriodFilterPr
       for (const [key, val] of Object.entries(updates)) {
         params.set(key, val)
       }
-      router.push(`/analytics?${params.toString()}`)
+      router.push(`${basePath}?${params.toString()}`)
     },
-    [router, searchParams]
+    [router, searchParams, basePath]
   )
 
   const granularityOptions = getGranularityOptions(startDate, endDate)

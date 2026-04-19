@@ -16,6 +16,7 @@ import {
   Wallet,
   Tag,
   BarChart2,
+  FileBarChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +51,14 @@ const NAV: NavItem[] = [
   },
   { label: "Passivos", href: "/liabilities", icon: CreditCard },
   { label: "Transações", href: "/transactions", icon: ArrowLeftRight },
-  { label: "Analytics", href: "/analytics", icon: BarChart2 },
+  {
+    label: "Analytics",
+    icon: BarChart2,
+    children: [
+      { label: "Visão Geral", href: "/analytics", icon: BarChart2 },
+      { label: "Relatório", href: "/analytics/report", icon: FileBarChart },
+    ],
+  },
   {
     label: "Configurações",
     icon: Building2,
@@ -70,12 +78,14 @@ function NavLink({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const isActive = item.href ? pathname.startsWith(item.href) : false;
+  const matches = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
+  const isActive = item.href ? matches(item.href) : false;
   const Icon = item.icon;
 
   if (item.children) {
     const isGroupActive = item.children.some(
-      (child) => child.href && pathname.startsWith(child.href)
+      (child) => child.href && matches(child.href)
     );
     return (
       <div>
