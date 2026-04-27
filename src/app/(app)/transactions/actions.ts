@@ -11,7 +11,7 @@ export async function createTransaction(formData: FormData) {
     account_id: Number(formData.get("account_id")),
     date: formData.get("date") as string,
     description: formData.get("description") as string,
-    amount: Number(formData.get("amount")),
+    amount: Math.abs(Number(formData.get("amount"))),
     type: formData.get("type") as "debit" | "credit" | "transfer",
   }).select("trans_id").single()
 
@@ -38,7 +38,7 @@ export async function updateTransaction(id: number, formData: FormData) {
     account_id: Number(formData.get("account_id")),
     date: formData.get("date") as string,
     description: formData.get("description") as string,
-    amount: Number(formData.get("amount")),
+    amount: Math.abs(Number(formData.get("amount"))),
     type: formData.get("type") as "debit" | "credit" | "transfer",
   }).eq("trans_id", id)
 

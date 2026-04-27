@@ -94,6 +94,14 @@ export default async function TransactionsPage({
             <Link href="/categories" className="underline underline-offset-2 hover:text-foreground">
               Categorias
             </Link>
+            {" · "}
+            <Link href="/transactions/import" className="underline underline-offset-2 hover:text-foreground">
+              Importar CSV
+            </Link>
+            {" · "}
+            <Link href="/classification-rules" className="underline underline-offset-2 hover:text-foreground">
+              Regras
+            </Link>
           </span>
         }
         action={

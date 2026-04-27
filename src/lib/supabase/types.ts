@@ -46,6 +46,7 @@ export type Database = {
           description: string
           client_id: number
           institution_id: number
+          transfer_keywords: string[]
           created_at: string
           updated_at: string
         }
@@ -55,6 +56,7 @@ export type Database = {
           description: string
           client_id: number
           institution_id: number
+          transfer_keywords?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -64,6 +66,7 @@ export type Database = {
           description?: string
           client_id?: number
           institution_id?: number
+          transfer_keywords?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -122,6 +125,49 @@ export type Database = {
             columns: ["parent_category_id"]
             referencedRelation: "category"
             referencedColumns: ["category_id"]
+          }
+        ]
+      }
+      classification_rule: {
+        Row: {
+          rule_id: number
+          pattern: string
+          category_id: number
+          client_id: number
+          priority: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          rule_id?: number
+          pattern: string
+          category_id: number
+          client_id: number
+          priority?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          rule_id?: number
+          pattern?: string
+          category_id?: number
+          client_id?: number
+          priority?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classification_rule_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "category"
+            referencedColumns: ["category_id"]
+          },
+          {
+            foreignKeyName: "classification_rule_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "client"
+            referencedColumns: ["client_id"]
           }
         ]
       }
