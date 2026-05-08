@@ -1,3 +1,4 @@
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
@@ -24,6 +25,21 @@ export default async function AppLayout({
       email: user.email!,
       auth_user_id: user.id,
     });
+  }
+
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+  const dismissed = cookieStore.has("provisional_review_seen");
+  const pathname = headerStore.get("x-pathname") ?? "";
+  const onReviewPage = pathname.startsWith("/transactions/review");
+
+  const { count: provisionalCount } = await supabase
+    .from("transaction")
+    .select("trans_id", { count: "exact", head: true })
+    .eq("is_provisional", true);
+
+  if ((provisionalCount ?? 0) > 0 && !dismissed && !onReviewPage) {
+    redirect("/transactions/review");
   }
 
   const userName =
