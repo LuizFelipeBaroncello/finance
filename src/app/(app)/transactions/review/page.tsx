@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { classifyExistingRows, type ExistingRow } from "@/lib/transactions/classifier";
@@ -6,18 +5,6 @@ import { ReviewClient } from "./components/review-client";
 import type { TransactionKind } from "@/lib/transactions/types";
 
 export default async function ReviewPage() {
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set("provisional_review_seen", "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-    });
-  } catch {
-    // Cookies are read-only in some Server Component contexts in Next 16.
-    // Ignore and rely on later mutation in Server Actions.
-  }
-
   const supabase = await createClient();
 
   const { data: provisional } = await supabase
