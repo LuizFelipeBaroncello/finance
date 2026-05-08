@@ -37,6 +37,7 @@ import type {
 } from "@/lib/transactions/types";
 import {
   classifyCsvAction,
+  classifyPdfAction,
   createRuleFromRow,
   insertTransactionsBatch,
   reclassifyAction,
@@ -69,11 +70,6 @@ const BANK_OPTIONS: BankSource[] = [
   "bradesco_credit",
 ];
 
-function formatIsoDateBR(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
-
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
@@ -91,6 +87,7 @@ export function ImportWizard({
   const [source, setSource] = useState<BankSource>("nubank_debit");
   const [accountId, setAccountId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
+  const [pdfYear, setPdfYear] = useState<number>(new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<EditableRow[]>([]);
   const [csvContent, setCsvContent] = useState<string>("");
@@ -108,6 +105,7 @@ export function ImportWizard({
       total: rows.length,
       active: active.length,
       ignored: rows.length - active.length,
+      duplicates: rows.filter((r) => r.duplicate).length,
       byType: {
         debit: active.filter((r) => r.suggestedType === "debit").length,
         credit: active.filter((r) => r.suggestedType === "credit").length,
@@ -119,15 +117,41 @@ export function ImportWizard({
     };
   }, [rows]);
 
+  const isPdf =
+    !!file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name));
+
   async function handleUpload() {
     setError(null);
     if (!file || !accountId) {
-      setError("Selecione conta, tipo de arquivo e um CSV.");
+      setError("Selecione conta, tipo de arquivo e um arquivo.");
       return;
     }
-    const content = await file.text();
-    setCsvContent(content);
+    if (isPdf && source !== "bradesco_credit") {
+      setError("Importação de PDF disponível apenas para Bradesco — cartão de crédito.");
+      return;
+    }
     startTransition(async () => {
+      if (isPdf) {
+        const buf = await file.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = "";
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+        }
+        const base64 = btoa(binary);
+        const res = await classifyPdfAction(Number(accountId), base64, pdfYear);
+        if (res.error || !res.rows) {
+          setError(res.error ?? "Falha ao classificar.");
+          return;
+        }
+        if (res.csvContent) setCsvContent(res.csvContent);
+        setRows(res.rows.map((r, i) => ({ ...r, id: i })));
+        setStep("review");
+        return;
+      }
+      const content = await file.text();
+      setCsvContent(content);
       const res = await classifyCsvAction(source, Number(accountId), content);
       if (res.error || !res.rows) {
         setError(res.error ?? "Falha ao classificar.");
@@ -224,13 +248,30 @@ export function ImportWizard({
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Arquivo CSV</label>
+              <label className="text-sm font-medium">Arquivo (CSV ou PDF)</label>
               <Input
                 type="file"
-                accept=".csv,text/csv"
+                accept=".csv,text/csv,.pdf,application/pdf"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
+              <p className="text-xs text-muted-foreground">
+                PDF suportado apenas para Bradesco — cartão de crédito.
+              </p>
             </div>
+            {isPdf && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Ano de referência</label>
+                <Input
+                  type="number"
+                  value={pdfYear}
+                  onChange={(e) => setPdfYear(Number(e.target.value) || pdfYear)}
+                  className="w-32"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ano aplicado às datas DD/MM extraídas do PDF.
+                </p>
+              </div>
+            )}
             <Button onClick={handleUpload} disabled={isPending || !file || !accountId}>
               {isPending ? "Processando..." : "Classificar"}
             </Button>
@@ -245,7 +286,7 @@ export function ImportWizard({
               <span>2. Revisar classificações</span>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-normal text-muted-foreground">
-                  {summary.active}/{summary.total} selecionadas · {summary.unclassified} sem categoria
+                  {summary.active}/{summary.total} selecionadas · {summary.unclassified} sem categoria · {summary.duplicates} duplicadas
                 </span>
                 <Dialog open={rulesOpen} onOpenChange={handleRulesDialogChange}>
                   <DialogTrigger render={<Button variant="outline" size="sm" />}>
@@ -399,16 +440,31 @@ function ReviewRow({
   onChange: (patch: Partial<EditableRow>) => void;
 }) {
   const filtered = categories.filter((c) => c.type === row.suggestedType);
-  const rowClass = row.ignored
-    ? "opacity-40"
-    : row.reason === "unclassified"
-      ? "bg-yellow-500/5"
-      : row.reason === "transfer-self"
-        ? "bg-blue-500/5"
-        : "";
+  const rowClass = row.duplicate
+    ? "opacity-40 bg-muted/40 line-through"
+    : row.ignored
+      ? "opacity-40"
+      : row.reason === "unclassified"
+        ? "bg-yellow-500/5"
+        : row.reason === "transfer-self"
+          ? "bg-blue-500/5"
+          : "";
 
   return (
-    <TableRow className={rowClass}>
+    <TableRow
+      className={`${rowClass} cursor-pointer`}
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (
+          target.closest(
+            'input, select, button, a, label, [role="combobox"], [role="dialog"], [data-slot="select-trigger"]',
+          )
+        ) {
+          return;
+        }
+        onChange({ ignored: !row.ignored });
+      }}
+    >
       <TableCell>
         <input
           type="checkbox"
@@ -416,11 +472,20 @@ function ReviewRow({
           onChange={(e) => onChange({ ignored: !e.target.checked })}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap text-muted-foreground">
-        {formatIsoDateBR(row.date)}
+      <TableCell className="whitespace-nowrap">
+        <Input
+          type="date"
+          value={row.date}
+          onChange={(e) => onChange({ date: e.target.value })}
+          className="w-[140px]"
+        />
       </TableCell>
-      <TableCell className="max-w-[300px] truncate" title={row.description}>
-        {row.description}
+      <TableCell className="max-w-[300px]">
+        <Input
+          value={row.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+          title={row.description}
+        />
       </TableCell>
       <TableCell className="whitespace-nowrap">{formatCurrency(row.amount)}</TableCell>
       <TableCell>
@@ -475,9 +540,16 @@ function ReviewRow({
         )}
       </TableCell>
       <TableCell>
-        {row.reason === "rule" && <Badge variant="secondary">Regra</Badge>}
-        {row.reason === "transfer-self" && <Badge variant="secondary">Transf.</Badge>}
-        {row.reason === "unclassified" && (
+        {row.duplicate && (
+          <Badge variant="outline" className="border-orange-500/50 text-orange-600">
+            Duplicada
+          </Badge>
+        )}
+        {!row.duplicate && row.reason === "rule" && <Badge variant="secondary">Regra</Badge>}
+        {!row.duplicate && row.reason === "transfer-self" && (
+          <Badge variant="secondary">Transf.</Badge>
+        )}
+        {!row.duplicate && row.reason === "unclassified" && (
           <Badge variant="outline" className="border-yellow-500/50 text-yellow-600">
             Sem regra
           </Badge>

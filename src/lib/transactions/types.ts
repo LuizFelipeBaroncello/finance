@@ -17,4 +17,5 @@ export type ClassifiedRow = ParsedRow & {
   matchedRuleId: number | null;
   reason: ClassificationReason;
   ignored?: boolean;
+  duplicate?: boolean;
 };
