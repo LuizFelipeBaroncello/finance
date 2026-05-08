@@ -23,6 +23,7 @@ async function flagDuplicates(
     .from("transaction")
     .select("date, description, amount")
     .eq("account_id", accountId)
+    .eq("is_provisional", false)
     .gte("date", minDate)
     .lte("date", maxDate);
 
