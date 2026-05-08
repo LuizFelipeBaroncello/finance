@@ -147,7 +147,8 @@ export async function insertTransactionsBatch(
       .from("transaction")
       .select("trans_id, description, amount")
       .eq("account_id", accountId)
-      .eq("date", row.date);
+      .eq("date", row.date)
+      .eq("is_provisional", false);
 
     if (selErr) {
       errors.push(`${row.description}: ${selErr.message}`);
