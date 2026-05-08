@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import { ProvisionalBanner } from "@/components/provisional-banner";
 
 export default async function AppLayout({
   children,
@@ -52,6 +53,7 @@ export default async function AppLayout({
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
+        <ProvisionalBanner count={provisionalCount ?? 0} />
         <Header userName={userName} userEmail={userEmail} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
