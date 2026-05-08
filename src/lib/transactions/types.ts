@@ -19,3 +19,8 @@ export type ClassifiedRow = ParsedRow & {
   ignored?: boolean;
   duplicate?: boolean;
 };
+
+export type ProvisionalRow = ClassifiedRow & {
+  transId: number;
+  accountId: number;
+};
