@@ -1,7 +1,9 @@
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import { ProvisionalBanner } from "@/components/provisional-banner";
 
 export default async function AppLayout({
   children,
@@ -26,6 +28,21 @@ export default async function AppLayout({
     });
   }
 
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+  const dismissed = cookieStore.has("provisional_review_seen");
+  const pathname = headerStore.get("x-pathname") ?? "";
+  const onReviewPage = pathname.startsWith("/transactions/review");
+
+  const { count: provisionalCount } = await supabase
+    .from("transaction")
+    .select("trans_id", { count: "exact", head: true })
+    .eq("is_provisional", true);
+
+  if ((provisionalCount ?? 0) > 0 && !dismissed && !onReviewPage) {
+    redirect("/transactions/review");
+  }
+
   const userName =
     user.user_metadata?.full_name ??
     user.email?.split("@")[0] ??
@@ -36,6 +53,7 @@ export default async function AppLayout({
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
+        <ProvisionalBanner count={provisionalCount ?? 0} />
         <Header userName={userName} userEmail={userEmail} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>

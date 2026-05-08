@@ -32,3 +32,6 @@ yarn-error.log*
 
 # claude code
 .claude/
+
+# local sample documents (may contain personal data)
+sample_docs/

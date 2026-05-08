@@ -4,7 +4,58 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { classifyRows } from "@/lib/transactions/classifier";
 import { parseCsvContent } from "@/lib/transactions/parsers";
+import { extractBradescoCreditCsv } from "@/lib/transactions/parsers/pdf";
 import type { BankSource, ClassifiedRow, TransactionKind } from "@/lib/transactions/types";
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+async function flagDuplicates(
+  supabase: SupabaseClient,
+  accountId: number,
+  rows: ClassifiedRow[],
+): Promise<ClassifiedRow[]> {
+  if (rows.length === 0) return rows;
+  const dates = rows.map((r) => r.date);
+  const minDate = dates.reduce((a, b) => (a < b ? a : b));
+  const maxDate = dates.reduce((a, b) => (a > b ? a : b));
+
+  const { data: existing, error } = await supabase
+    .from("transaction")
+    .select("date, description, amount")
+    .eq("account_id", accountId)
+    .eq("is_provisional", false)
+    .gte("date", minDate)
+    .lte("date", maxDate);
+
+  console.log("[flagDuplicates]", {
+    accountId,
+    rowsCount: rows.length,
+    minDate,
+    maxDate,
+    existingCount: existing?.length ?? 0,
+    error: error?.message,
+    sampleExisting: existing?.slice(0, 3),
+    sampleRow: rows[0]
+      ? { date: rows[0].date, description: rows[0].description, amount: rows[0].amount }
+      : null,
+  });
+
+  if (error || !existing) return rows;
+
+  const normDate = (d: string) => d.slice(0, 10);
+  const key = (date: string, description: string, amount: number) =>
+    `${normDate(date)}|${description.trim()}|${Math.abs(amount).toFixed(2)}`;
+
+  const existingKeys = new Set(
+    existing.map((e) => key(e.date, e.description, Number(e.amount))),
+  );
+
+  return rows.map((r) => {
+    const isDup = existingKeys.has(key(r.date, r.description, r.amount));
+    if (!isDup) return r;
+    return { ...r, duplicate: true, ignored: true };
+  });
+}
 
 export async function classifyCsvAction(
   source: BankSource,
@@ -14,7 +65,32 @@ export async function classifyCsvAction(
   try {
     const parsed = parseCsvContent(source, csvContent);
     const rows = await classifyRows(parsed, source, accountId);
-    return { rows };
+    const supabase = await createClient();
+    const flagged = await flagDuplicates(supabase, accountId, rows);
+    return { rows: flagged };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function classifyPdfAction(
+  accountId: number,
+  pdfBase64: string,
+  year: number,
+): Promise<{ rows?: ClassifiedRow[]; csvContent?: string; error?: string }> {
+  try {
+    const binary = Buffer.from(pdfBase64, "base64");
+    const buf = new Uint8Array(binary.buffer, binary.byteOffset, binary.byteLength);
+    const { csv, ignoredDescriptions } = await extractBradescoCreditCsv(buf, year);
+    const parsed = parseCsvContent("bradesco_credit", csv);
+    const rows = await classifyRows(parsed, "bradesco_credit", accountId);
+    const supabase = await createClient();
+    const flagged = await flagDuplicates(supabase, accountId, rows);
+    const ignoredSet = new Set(ignoredDescriptions.map((d) => d.trim()));
+    const finalRows = flagged.map((r) =>
+      ignoredSet.has(r.description.trim()) ? { ...r, ignored: true } : r,
+    );
+    return { rows: finalRows, csvContent: csv };
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) };
   }
@@ -36,13 +112,14 @@ export async function reclassifyAction(
     const parsed = parseCsvContent(source, csvContent);
     const rows = await classifyRows(parsed, source, accountId);
     const supabase = await createClient();
+    const flagged = await flagDuplicates(supabase, accountId, rows);
     const { data: rules, error } = await supabase
       .from("classification_rule")
       .select("rule_id, pattern, category_id, priority")
       .order("priority", { ascending: false })
       .order("pattern", { ascending: true });
     if (error) return { error: error.message };
-    return { rows, rules: rules ?? [] };
+    return { rows: flagged, rules: rules ?? [] };
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) };
   }
@@ -68,19 +145,23 @@ export async function insertTransactionsBatch(
   for (const row of rows) {
     const { data: existing, error: selErr } = await supabase
       .from("transaction")
-      .select("trans_id")
+      .select("trans_id, description, amount")
       .eq("account_id", accountId)
       .eq("date", row.date)
-      .eq("description", row.description)
-      .eq("amount", row.amount)
-      .eq("type", row.type)
-      .limit(1);
+      .eq("is_provisional", false);
 
     if (selErr) {
       errors.push(`${row.description}: ${selErr.message}`);
       continue;
     }
-    if (existing && existing.length > 0) {
+    const targetDesc = row.description.trim();
+    const targetAbs = Math.abs(row.amount).toFixed(2);
+    const isDup = (existing ?? []).some(
+      (e) =>
+        e.description.trim() === targetDesc &&
+        Math.abs(Number(e.amount)).toFixed(2) === targetAbs,
+    );
+    if (isDup) {
       skipped += 1;
       continue;
     }

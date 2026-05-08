@@ -79,6 +79,7 @@ export default async function AnalyticsPage({
     .select(
       "*, account(account_name), re_category_transaction(category_id, category(category_name))"
     )
+    .eq("is_provisional", false)
     .gte("date", startDate)
     .lte("date", endDate)
     .order("date", { ascending: true })

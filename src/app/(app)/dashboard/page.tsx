@@ -42,6 +42,7 @@ export default async function DashboardPage() {
     supabase
       .from("transaction")
       .select("trans_id, date, description, amount, type, account(account_name)")
+      .eq("is_provisional", false)
       .order("date", { ascending: false })
       .limit(10),
   ])

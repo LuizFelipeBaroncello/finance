@@ -52,6 +52,7 @@ export default async function TransactionsPage({
     supabase
       .from("transaction")
       .select("*, account(account_name), re_category_transaction(category_id, category(category_name))")
+      .eq("is_provisional", false)
       .gte("date", firstOfMonth)
       .lt("date", firstOfNextMonth)
       .order("date", { ascending: false }),
@@ -66,6 +67,7 @@ export default async function TransactionsPage({
     supabase
       .from("transaction")
       .select("amount, type")
+      .eq("is_provisional", false)
       .gte("date", firstOfMonth)
       .lt("date", firstOfNextMonth),
   ])
