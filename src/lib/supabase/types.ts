@@ -179,6 +179,7 @@ export type Database = {
           description: string
           amount: number
           type: Database["finance"]["Enums"]["transaction_type"]
+          is_provisional: boolean
           created_at: string
           updated_at: string
         }
@@ -189,6 +190,7 @@ export type Database = {
           description: string
           amount: number
           type: Database["finance"]["Enums"]["transaction_type"]
+          is_provisional?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -199,6 +201,7 @@ export type Database = {
           description?: string
           amount?: number
           type?: Database["finance"]["Enums"]["transaction_type"]
+          is_provisional?: boolean
           created_at?: string
           updated_at?: string
         }
