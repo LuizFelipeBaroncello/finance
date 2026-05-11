@@ -1,6 +1,6 @@
 # feed-level-temp — Wiki
 
-_Generated 2026-04-16 — re-run `npx codesight --wiki` if the codebase has changed._
+_Generated 2026-05-09 — re-run `npx codesight --wiki` if the codebase has changed._
 
 Structural map compiled from source code via AST. No LLM — deterministic, 200ms.
 
@@ -16,8 +16,8 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 - Routes: **1**
 - Models: **0**
-- Components: **39**
-- Env vars: **0** required, **3** with defaults
+- Components: **50**
+- Env vars: **2** required, **3** with defaults
 
 ## How to Use
 
@@ -42,4 +42,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-16 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-05-09 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_
