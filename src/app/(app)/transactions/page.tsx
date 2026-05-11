@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TransactionForm } from "./components/transaction-form"
 import { MonthPicker } from "./components/month-picker"
+import { PluggyImportButton } from "@/components/transactions/pluggy-import-button"
 import Link from "next/link"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -109,6 +110,7 @@ export default async function TransactionsPage({
         action={
           <div className="flex items-center gap-3">
             <MonthPicker value={selectedMonth} />
+            <PluggyImportButton accounts={accounts ?? []} />
             <TransactionForm
               accounts={accounts ?? []}
               categories={categories ?? []}
