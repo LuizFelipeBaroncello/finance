@@ -5,6 +5,8 @@
 - `NEXT_PUBLIC_SITE_URL` (has default) — .env.example
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (has default) — .env.local
 - `NEXT_PUBLIC_SUPABASE_URL` (has default) — .env.local
+- `SUPABASE_JAVA_CLASSIFIER` **required** — scripts/seed-classification-rules.mjs
+- `SUPABASE_SERVICE_KEY` **required** — scripts/seed-classification-rules.mjs
 
 ## Config Files
 

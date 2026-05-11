@@ -20,7 +20,7 @@ export default async function ReviewPage() {
   const existing: ExistingRow[] = provisional.map((r) => ({
     transId: r.trans_id,
     accountId: r.account_id,
-    date: r.date,
+    date: String(r.date).slice(0, 10),
     description: r.description,
     amount: Math.abs(Number(r.amount)),
     rawAmount: Number(r.amount),
@@ -67,11 +67,17 @@ export default async function ReviewPage() {
     .from("account")
     .select("account_id, account_name");
 
+  const { data: rules } = await supabase
+    .from("classification_rule")
+    .select("rule_id, pattern, category_id, priority")
+    .order("priority", { ascending: false });
+
   return (
     <ReviewClient
       initialRows={withDuplicates}
       categories={categories ?? []}
       accounts={accounts ?? []}
+      rules={rules ?? []}
     />
   );
 }

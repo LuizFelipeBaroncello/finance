@@ -112,6 +112,7 @@ function ClassificationRow({
       className={`${rowClass} cursor-pointer`}
       onClick={(e) => {
         const target = e.target as HTMLElement;
+        if (!e.currentTarget.contains(target)) return;
         if (
           target.closest(
             'input, select, button, a, label, [role="combobox"], [role="dialog"], [data-slot="select-trigger"]',

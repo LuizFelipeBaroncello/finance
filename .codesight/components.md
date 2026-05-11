@@ -6,13 +6,18 @@
 - **AnalyticsDashboard** [client] — props: transactions, categories, granularity — `src/app/(app)/analytics/components/analytics-dashboard.tsx`
 - **CategoryChart** [client] — props: data — `src/app/(app)/analytics/components/category-chart.tsx`
 - **EvolutionChart** [client] — props: data — `src/app/(app)/analytics/components/evolution-chart.tsx`
-- **PeriodFilter** [client] — props: startDate, endDate, granularity — `src/app/(app)/analytics/components/period-filter.tsx`
+- **PeriodFilter** [client] — props: startDate, endDate, granularity, basePath — `src/app/(app)/analytics/components/period-filter.tsx`
 - **SeriesEvolutionChart** [client] — props: data, seriesKeys — `src/app/(app)/analytics/components/series-evolution-chart.tsx`
 - **TransactionList** [client] — props: transactions, categories, search, onSearchChange, categoryFilter, onCategoryFilterChange, hiddenIds, onToggleHidden, onClearHidden — `src/app/(app)/analytics/components/transaction-list.tsx`
 - **TypeChart** [client] — props: data — `src/app/(app)/analytics/components/type-chart.tsx`
 - **AnalyticsPage** — props: searchParams — `src/app/(app)/analytics/page.tsx`
+- **FinancialReportTable** [client] — props: rows — `src/app/(app)/analytics/report/components/financial-report-table.tsx`
+- **AnalyticsReportPage** — props: searchParams — `src/app/(app)/analytics/report/page.tsx`
 - **CategoryForm** [client] — props: category, categories — `src/app/(app)/categories/components/category-form.tsx`
 - **CategoriesPage** — `src/app/(app)/categories/page.tsx`
+- **RuleForm** [client] — props: rule, categories, triggerLabel — `src/app/(app)/classification-rules/components/rule-form.tsx`
+- **RulesTable** [client] — props: rules, categories — `src/app/(app)/classification-rules/components/rules-table.tsx`
+- **ClassificationRulesPage** — `src/app/(app)/classification-rules/page.tsx`
 - **DashboardPage** — `src/app/(app)/dashboard/page.tsx`
 - **PatrimonyChart** [client] — props: data — `src/app/(app)/dashboard/patrimony-chart.tsx`
 - **FixedIncomeForm** [client] — props: fixedIncome, institutions — `src/app/(app)/fixed-income/components/fixed-income-form.tsx`
@@ -25,7 +30,11 @@
 - **RealEstatePage** — `src/app/(app)/real-estate/page.tsx`
 - **MonthPicker** [client] — props: value — `src/app/(app)/transactions/components/month-picker.tsx`
 - **TransactionForm** [client] — props: transaction, accounts, categories — `src/app/(app)/transactions/components/transaction-form.tsx`
+- **ImportWizard** [client] — props: accounts, categories, initialRules — `src/app/(app)/transactions/import/components/import-wizard.tsx`
+- **ImportTransactionsPage** — `src/app/(app)/transactions/import/page.tsx`
 - **TransactionsPage** — props: searchParams — `src/app/(app)/transactions/page.tsx`
+- **ReviewClient** [client] — props: initialRows, categories, accounts, rules — `src/app/(app)/transactions/review/components/review-client.tsx`
+- **ReviewPage** — `src/app/(app)/transactions/review/page.tsx`
 - **VariableIncomeForm** [client] — props: variableIncome, institutions — `src/app/(app)/variable-income/components/variable-income-form.tsx`
 - **VariableIncomePage** — `src/app/(app)/variable-income/page.tsx`
 - **VehicleForm** [client] — props: vehicle — `src/app/(app)/vehicles/components/vehicle-form.tsx`
@@ -39,3 +48,5 @@
 - **Header** [client] — props: userName, userEmail — `src/components/header.tsx`
 - **PageHeader** — props: title, description, action, className — `src/components/page-header.tsx`
 - **Providers** [client] — `src/components/providers.tsx`
+- **ProvisionalBanner** — props: count — `src/components/provisional-banner.tsx`
+- **ClassificationTable** [client] — props: rows, categories, onChange, onCreateRule — `src/components/transactions/classification-table.tsx`
