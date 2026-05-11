@@ -78,8 +78,8 @@ export function AccountChart({ data }: { data: AccountData[] }) {
           width={130}
         />
         <Tooltip
-          formatter={(value: number, name: string) => [
-            formatBRL(value),
+          formatter={(value, name) => [
+            formatBRL(Number(value)),
             name === "debito" ? "Débito" : "Crédito",
           ]}
           contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}

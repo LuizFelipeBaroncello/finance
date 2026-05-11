@@ -88,7 +88,10 @@ export function EvolutionChart({ data }: { data: EvolutionData[] }) {
           width={72}
         />
         <Tooltip
-          formatter={(value: number, name: string) => [formatBRL(value), LABELS[name] ?? name]}
+          formatter={(value, name) => [
+            formatBRL(Number(value)),
+            name == null ? "" : LABELS[name] ?? name,
+          ]}
           contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
           labelStyle={{ color: "#a1a1aa" }}
           itemStyle={{ color: "#f4f4f5" }}

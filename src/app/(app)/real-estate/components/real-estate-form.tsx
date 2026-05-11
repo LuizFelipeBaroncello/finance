@@ -124,7 +124,7 @@ export function RealEstateForm({ realEstate }: RealEstateFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={propertyType} onValueChange={setPropertyType}>
+              <Select value={propertyType} onValueChange={(v) => setPropertyType(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>

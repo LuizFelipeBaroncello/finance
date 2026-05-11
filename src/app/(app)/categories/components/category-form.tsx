@@ -113,7 +113,7 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={(v) => setType(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
@@ -132,7 +132,7 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Categoria Pai
               </label>
-              <Select value={parentId} onValueChange={setParentId}>
+              <Select value={parentId} onValueChange={(v) => setParentId(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione uma categoria pai" />
                 </SelectTrigger>

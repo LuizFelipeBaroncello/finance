@@ -173,7 +173,7 @@ export function TransactionForm({ transaction, accounts, categories }: Transacti
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={type} onValueChange={handleTypeChange}>
+              <Select value={type} onValueChange={(v) => handleTypeChange(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
@@ -192,7 +192,7 @@ export function TransactionForm({ transaction, accounts, categories }: Transacti
               <label className="text-sm font-medium text-foreground">
                 Conta
               </label>
-              <Select value={accountId} onValueChange={setAccountId}>
+              <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione uma conta" />
                 </SelectTrigger>

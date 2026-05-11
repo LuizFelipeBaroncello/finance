@@ -141,7 +141,7 @@ export function FixedIncomeForm({ fixedIncome, institutions }: FixedIncomeFormPr
             {/* Tipo */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Tipo</label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={(v) => setType(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
@@ -159,7 +159,7 @@ export function FixedIncomeForm({ fixedIncome, institutions }: FixedIncomeFormPr
             {/* Instituição */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Instituição</label>
-              <Select value={institutionId} onValueChange={setInstitutionId}>
+              <Select value={institutionId} onValueChange={(v) => setInstitutionId(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione a instituição" />
                 </SelectTrigger>
@@ -192,7 +192,7 @@ export function FixedIncomeForm({ fixedIncome, institutions }: FixedIncomeFormPr
             {/* Tipo de Taxa */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Tipo de Taxa</label>
-              <Select value={rateType} onValueChange={setRateType}>
+              <Select value={rateType} onValueChange={(v) => setRateType(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o tipo de taxa" />
                 </SelectTrigger>

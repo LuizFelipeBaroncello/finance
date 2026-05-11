@@ -94,7 +94,7 @@ export function AccountForm({ account, institutions }: AccountFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Instituição
               </label>
-              <Select value={institutionId} onValueChange={setInstitutionId} required>
+              <Select value={institutionId} onValueChange={(v) => setInstitutionId(v ?? "")} required>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione a instituição" />
                 </SelectTrigger>

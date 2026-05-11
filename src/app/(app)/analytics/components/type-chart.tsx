@@ -69,8 +69,8 @@ export function TypeChart({ data }: { data: TypeData[] }) {
           width={72}
         />
         <Tooltip
-          formatter={(value: number, name: string) => [
-            formatBRL(value),
+          formatter={(value, name) => [
+            formatBRL(Number(value)),
             name === "receitas" ? "Receitas" : "Despesas",
           ]}
           contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}

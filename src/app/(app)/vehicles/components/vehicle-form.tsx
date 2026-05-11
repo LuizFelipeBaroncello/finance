@@ -120,7 +120,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={vehicleType} onValueChange={setVehicleType}>
+              <Select value={vehicleType} onValueChange={(v) => setVehicleType(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>

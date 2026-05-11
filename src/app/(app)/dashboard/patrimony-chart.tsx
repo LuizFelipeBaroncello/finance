@@ -48,7 +48,7 @@ export function PatrimonyChart({ data }: PatrimonyChartProps) {
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number) => formatBRL(value)}
+          formatter={(value) => formatBRL(Number(value))}
           contentStyle={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 8 }}
           labelStyle={{ color: "#a1a1aa" }}
           itemStyle={{ color: "#f4f4f5" }}

@@ -132,7 +132,7 @@ export function VariableIncomeForm({ variableIncome, institutions }: VariableInc
                 <label className="text-sm font-medium text-foreground">
                   Tipo de Ativo
                 </label>
-                <Select value={assetType} onValueChange={setAssetType}>
+                <Select value={assetType} onValueChange={(v) => setAssetType(v ?? "")}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
@@ -164,7 +164,7 @@ export function VariableIncomeForm({ variableIncome, institutions }: VariableInc
               <label className="text-sm font-medium text-foreground">
                 Instituição (opcional)
               </label>
-              <Select value={institutionId} onValueChange={setInstitutionId}>
+              <Select value={institutionId} onValueChange={(v) => setInstitutionId(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione a instituição" />
                 </SelectTrigger>

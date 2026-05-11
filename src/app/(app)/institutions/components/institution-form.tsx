@@ -105,7 +105,7 @@ export function InstitutionForm({ institution }: InstitutionFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={(v) => setType(v ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
