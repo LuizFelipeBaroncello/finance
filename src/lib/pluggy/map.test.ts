@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dateWindow, mapPluggyTransaction } from "./map.ts";
+import { dateWindow, mapPluggyTransaction } from "./map";
 
 test("dateWindow returns from = today - days and to = today, ISO date only", () => {
   const { from, to } = dateWindow(30, new Date("2026-05-11T12:00:00Z"));
