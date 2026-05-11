@@ -32,6 +32,7 @@ import {
 import { RulesTable } from "@/app/(app)/classification-rules/components/rules-table";
 import { RuleForm } from "@/app/(app)/classification-rules/components/rule-form";
 import { ClassificationTable } from "@/components/transactions/classification-table";
+import { PluggyImportButton } from "@/components/transactions/pluggy-import-button";
 
 type Account = { account_id: number; account_name: string };
 type Category = { category_id: number; category_name: string; type: string };
@@ -250,6 +251,21 @@ export function ImportWizard({
             <Button onClick={handleUpload} disabled={isPending || !file || !accountId}>
               {isPending ? "Processando..." : "Classificar"}
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {step === "upload" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pluggy (Open Finance)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">
+              Conecte sua instituição e importe as transações dos últimos 20 ou 30 dias
+              (contas e cartões). Elas aparecerão na tela de consolidação para revisão.
+            </p>
+            <PluggyImportButton accounts={accounts} />
           </CardContent>
         </Card>
       )}
