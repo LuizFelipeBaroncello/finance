@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
+import Link from "next/link"
 import {
   Table,
   TableBody,
@@ -41,6 +42,54 @@ function parseMes(mes: string): number {
 
 const fmt = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+type DateRange = { startDate: string; endDate: string }
+
+function mesToRange(mes: string): DateRange | null {
+  const code = parseMes(mes)
+  if (!code) return null
+  const ano = Math.floor(code / 12)
+  const mesIndex = code % 12
+  if (ano < 1970) return null
+  const mm = String(mesIndex + 1).padStart(2, "0")
+  const lastDay = new Date(ano, mesIndex + 1, 0).getDate()
+  return {
+    startDate: `${ano}-${mm}-01`,
+    endDate: `${ano}-${mm}-${String(lastDay).padStart(2, "0")}`,
+  }
+}
+
+function txHref(range: DateRange | null, cats: string[]): string | null {
+  if (!range) return null
+  const params = new URLSearchParams()
+  params.set("startDate", range.startDate)
+  params.set("endDate", range.endDate)
+  if (cats.length > 0) {
+    params.set("cat", cats.map(encodeURIComponent).join(","))
+  }
+  return `/transactions?${params.toString()}`
+}
+
+function ReportLink({
+  href,
+  className,
+  children,
+}: {
+  href: string | null
+  className?: string
+  children: ReactNode
+}) {
+  if (!href) return <>{children}</>
+  return (
+    <Link
+      href={href}
+      onClick={(e) => e.stopPropagation()}
+      className={cn("hover:underline", className)}
+    >
+      {children}
+    </Link>
+  )
+}
 
 export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
   const [hidden, setHidden] = useState<Set<string>>(new Set())
@@ -109,6 +158,29 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
   const totalDespesas = meses.reduce((a, m) => a + totaisPorMes[m].despesas, 0)
   const totalSaldo = totalReceitas - totalDespesas
 
+  const periodRange = useMemo<DateRange | null>(() => {
+    if (meses.length === 0) return null
+    const first = mesToRange(meses[0])
+    const last = mesToRange(meses[meses.length - 1])
+    if (!first || !last) return null
+    return { startDate: first.startDate, endDate: last.endDate }
+  }, [meses])
+
+  const creditCatsVisiveis = useMemo(
+    () =>
+      Object.entries(categorias)
+        .filter(([cat, v]) => v.tipo === "Credit" && !hidden.has(cat))
+        .map(([cat]) => cat),
+    [categorias, hidden]
+  )
+  const debitCatsVisiveis = useMemo(
+    () =>
+      Object.entries(categorias)
+        .filter(([cat, v]) => v.tipo === "Debit" && !hidden.has(cat))
+        .map(([cat]) => cat),
+    [categorias, hidden]
+  )
+
   if (rows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">Nenhum dado para o período selecionado.</p>
@@ -127,10 +199,22 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
         <TableCell className="font-medium">{cat}</TableCell>
         {meses.map((mes) => (
           <TableCell key={mes} className="text-right tabular-nums">
-            {porMes[mes] ? fmt(Math.abs(porMes[mes])) : "—"}
+            {porMes[mes] ? (
+              <ReportLink href={txHref(mesToRange(mes), [cat])}>
+                {fmt(Math.abs(porMes[mes]))}
+              </ReportLink>
+            ) : (
+              "—"
+            )}
           </TableCell>
         ))}
-        <TableCell className="text-right tabular-nums font-medium">{fmt(total)}</TableCell>
+        <TableCell className="text-right tabular-nums font-medium">
+          {isHidden ? (
+            fmt(total)
+          ) : (
+            <ReportLink href={txHref(periodRange, [cat])}>{fmt(total)}</ReportLink>
+          )}
+        </TableCell>
       </TableRow>
     )
   }
@@ -159,11 +243,15 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
                 key={mes}
                 className="text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400"
               >
-                {fmt(totaisPorMes[mes].receitas)}
+                <ReportLink href={txHref(mesToRange(mes), creditCatsVisiveis)}>
+                  {fmt(totaisPorMes[mes].receitas)}
+                </ReportLink>
               </TableCell>
             ))}
             <TableCell className="text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-              {fmt(totalReceitas)}
+              <ReportLink href={txHref(periodRange, creditCatsVisiveis)}>
+                {fmt(totalReceitas)}
+              </ReportLink>
             </TableCell>
           </TableRow>
           {receitasCats.map(([cat, v]) => renderCategoriaRow(cat, v.porMes))}
@@ -177,11 +265,15 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
                 key={mes}
                 className="text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400"
               >
-                {fmt(totaisPorMes[mes].despesas)}
+                <ReportLink href={txHref(mesToRange(mes), debitCatsVisiveis)}>
+                  {fmt(totaisPorMes[mes].despesas)}
+                </ReportLink>
               </TableCell>
             ))}
             <TableCell className="text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
-              {fmt(totalDespesas)}
+              <ReportLink href={txHref(periodRange, debitCatsVisiveis)}>
+                {fmt(totalDespesas)}
+              </ReportLink>
             </TableCell>
           </TableRow>
           {despesasCats.map(([cat, v]) => renderCategoriaRow(cat, v.porMes))}
@@ -200,7 +292,7 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
                       : "text-rose-600 dark:text-rose-400"
                   )}
                 >
-                  {fmt(saldo)}
+                  <ReportLink href={txHref(mesToRange(mes), [])}>{fmt(saldo)}</ReportLink>
                 </TableCell>
               )
             })}
@@ -212,7 +304,7 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
                   : "text-rose-600 dark:text-rose-400"
               )}
             >
-              {fmt(totalSaldo)}
+              <ReportLink href={txHref(periodRange, [])}>{fmt(totalSaldo)}</ReportLink>
             </TableCell>
           </TableRow>
         </TableBody>

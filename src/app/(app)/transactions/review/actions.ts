@@ -58,6 +58,19 @@ export async function confirmProvisionalReview(
       continue;
     }
 
+    // A importação (Pluggy) já cria um vínculo com a categoria sugerida ao
+    // inserir a transação provisória. Removemos os vínculos existentes antes de
+    // gravar a categoria escolhida na revisão, senão a transação fica com duas
+    // categorias (a sugerida + a confirmada).
+    const { error: delErr } = await supabase
+      .from("re_category_transaction")
+      .delete()
+      .eq("trans_id", row.transId);
+    if (delErr) {
+      errors.push({ transId: row.transId, message: `categoria: ${delErr.message}` });
+      continue;
+    }
+
     if (row.categoryId != null) {
       const { error: linkErr } = await supabase
         .from("re_category_transaction")

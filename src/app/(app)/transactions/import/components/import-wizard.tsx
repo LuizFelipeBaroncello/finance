@@ -262,7 +262,7 @@ export function ImportWizard({
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-3">
-              Conecte sua instituição e importe as transações dos últimos 20 ou 30 dias
+              Conecte sua instituição e importe as transações dos últimos 1 a 30 dias
               (contas e cartões). Elas aparecerão na tela de consolidação para revisão.
             </p>
             <PluggyImportButton accounts={accounts} />

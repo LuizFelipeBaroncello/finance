@@ -9,6 +9,18 @@ import type { BankSource, ClassifiedRow, TransactionKind } from "@/lib/transacti
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
+// Importações (Pluggy, principalmente) às vezes trazem a transação com um dia
+// de diferença por conta de fuso horário. Para a deduplicação ser confiável,
+// consideramos uma transação como duplicata quando descrição + valor batem e a
+// data está dentro de ±1 dia.
+const DUP_DAY_TOLERANCE = 1;
+
+function shiftDate(isoDate: string, deltaDays: number): string {
+  const d = new Date(`${isoDate.slice(0, 10)}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
+}
+
 async function flagDuplicates(
   supabase: SupabaseClient,
   accountId: number,
@@ -16,8 +28,8 @@ async function flagDuplicates(
 ): Promise<ClassifiedRow[]> {
   if (rows.length === 0) return rows;
   const dates = rows.map((r) => r.date);
-  const minDate = dates.reduce((a, b) => (a < b ? a : b));
-  const maxDate = dates.reduce((a, b) => (a > b ? a : b));
+  const minDate = shiftDate(dates.reduce((a, b) => (a < b ? a : b)), -DUP_DAY_TOLERANCE);
+  const maxDate = shiftDate(dates.reduce((a, b) => (a > b ? a : b)), DUP_DAY_TOLERANCE);
 
   const { data: existing, error } = await supabase
     .from("transaction")
@@ -42,13 +54,17 @@ async function flagDuplicates(
 
   if (error || !existing) return rows;
 
-  const normDate = (d: string) => d.slice(0, 10);
   const key = (date: string, description: string, amount: number) =>
-    `${normDate(date)}|${description.trim()}|${Math.abs(amount).toFixed(2)}`;
+    `${date.slice(0, 10)}|${description.trim()}|${Math.abs(amount).toFixed(2)}`;
 
-  const existingKeys = new Set(
-    existing.map((e) => key(e.date, e.description, Number(e.amount))),
-  );
+  // Indexa cada transação existente sob as datas date-1, date e date+1 para
+  // tolerar deslocamento de fuso horário na importação.
+  const existingKeys = new Set<string>();
+  for (const e of existing) {
+    for (let delta = -DUP_DAY_TOLERANCE; delta <= DUP_DAY_TOLERANCE; delta++) {
+      existingKeys.add(key(shiftDate(e.date, delta), e.description, Number(e.amount)));
+    }
+  }
 
   return rows.map((r) => {
     const isDup = existingKeys.has(key(r.date, r.description, r.amount));
@@ -147,7 +163,8 @@ export async function insertTransactionsBatch(
       .from("transaction")
       .select("trans_id, description, amount")
       .eq("account_id", accountId)
-      .eq("date", row.date)
+      .gte("date", shiftDate(row.date, -DUP_DAY_TOLERANCE))
+      .lte("date", shiftDate(row.date, DUP_DAY_TOLERANCE))
       .eq("is_provisional", false);
 
     if (selErr) {

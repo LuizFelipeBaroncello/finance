@@ -48,6 +48,14 @@ interface TransactionFormProps {
   categories: Category[]
 }
 
+// `<input type="date">` only accepts a `YYYY-MM-DD` value; a full ISO
+// timestamp (e.g. "2026-05-11T00:00:00+00:00") is silently rejected and the
+// field renders empty. Normalize whatever the DB returns to a date-only string.
+function toDateInputValue(date: string | undefined): string {
+  if (!date) return new Date().toISOString().split("T")[0]
+  return date.slice(0, 10)
+}
+
 const TYPE_OPTIONS = [
   { value: "debit", label: "Despesa" },
   { value: "credit", label: "Receita" },
@@ -137,7 +145,7 @@ export function TransactionForm({ transaction, accounts, categories }: Transacti
               <Input
                 name="date"
                 type="date"
-                defaultValue={transaction?.date ?? new Date().toISOString().split("T")[0]}
+                defaultValue={toDateInputValue(transaction?.date)}
                 required
               />
             </div>

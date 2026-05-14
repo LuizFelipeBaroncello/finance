@@ -29,8 +29,23 @@ export default async function ReviewPage() {
 
   const classified = await classifyExistingRows(existing);
 
-  const minDate = existing.reduce((a, b) => (a.date < b.date ? a : b)).date;
-  const maxDate = existing.reduce((a, b) => (a.date > b.date ? a : b)).date;
+  // Importações (Pluggy) podem trazer a transação com ±1 dia de diferença por
+  // fuso horário; toleramos isso ao detectar duplicatas contra as confirmadas.
+  const DUP_DAY_TOLERANCE = 1;
+  const shiftDate = (isoDate: string, deltaDays: number): string => {
+    const d = new Date(`${isoDate.slice(0, 10)}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + deltaDays);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const minDate = shiftDate(
+    existing.reduce((a, b) => (a.date < b.date ? a : b)).date,
+    -DUP_DAY_TOLERANCE,
+  );
+  const maxDate = shiftDate(
+    existing.reduce((a, b) => (a.date > b.date ? a : b)).date,
+    DUP_DAY_TOLERANCE,
+  );
   const accountIds = Array.from(new Set(existing.map((r) => r.accountId)));
 
   const { data: confirmed } = await supabase
@@ -44,11 +59,12 @@ export default async function ReviewPage() {
   const key = (accountId: number, date: string, description: string, amount: number) =>
     `${accountId}|${date.slice(0, 10)}|${description.trim()}|${Math.abs(amount).toFixed(2)}`;
 
-  const confirmedKeys = new Set(
-    (confirmed ?? []).map((c) =>
-      key(c.account_id, c.date, c.description, Number(c.amount)),
-    ),
-  );
+  const confirmedKeys = new Set<string>();
+  for (const c of confirmed ?? []) {
+    for (let delta = -DUP_DAY_TOLERANCE; delta <= DUP_DAY_TOLERANCE; delta++) {
+      confirmedKeys.add(key(c.account_id, shiftDate(c.date, delta), c.description, Number(c.amount)));
+    }
+  }
 
   const withDuplicates = classified.map((r) => {
     const dupKey = key(r.accountId, r.date, r.description, r.amount);

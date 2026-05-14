@@ -11,30 +11,12 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import {
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  ChevronDown,
-  Eye,
-  EyeOff,
-} from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { applyCategoryFilter } from "../lib/category-filter"
-import type { CategoryFilter, CategoryFilterMode, Transaction } from "../types"
+import { CategoryFilterDropdown } from "./category-filter-dropdown"
+import type { CategoryFilter, Transaction } from "../types"
 
 type SortKey = "date" | "description" | "amount" | "type" | "account"
 type SortDir = "asc" | "desc"
@@ -70,21 +52,6 @@ interface TransactionListProps {
   hiddenIds: Set<number>
   onToggleHidden: (id: number) => void
   onClearHidden: () => void
-}
-
-function getCategoryFilterLabel(filter: CategoryFilter): string {
-  const count = filter.selected.size
-  if (count === 0) return "Todas as categorias"
-  if (filter.mode === "exclude") {
-    return count === 1
-      ? `Ocultando 1 categoria`
-      : `Ocultando ${count} categorias`
-  }
-  if (count === 1) {
-    const [only] = filter.selected
-    return only
-  }
-  return `${count} categorias`
 }
 
 export function TransactionList({
@@ -162,61 +129,11 @@ export function TransactionList({
           onChange={(e) => onSearchChange(e.target.value)}
           className="max-w-xs"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="outline" className="min-w-56 justify-between" />}>
-            <span className="truncate">{getCategoryFilterLabel(categoryFilter)}</span>
-            <ChevronDown className="ml-2 size-3.5 opacity-60" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64" align="start">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Modo</DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                value={categoryFilter.mode}
-                onValueChange={(value) =>
-                  onCategoryFilterChange({
-                    ...categoryFilter,
-                    mode: value as CategoryFilterMode,
-                  })
-                }
-              >
-                <DropdownMenuRadioItem value="include">
-                  Mostrar selecionadas
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="exclude">
-                  Ocultar selecionadas
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={categoryFilter.selected.size === 0}
-              onClick={() =>
-                onCategoryFilterChange({ ...categoryFilter, selected: new Set() })
-              }
-            >
-              Limpar seleção
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Categorias</DropdownMenuLabel>
-              {categories.map((cat) => (
-                <DropdownMenuCheckboxItem
-                  key={cat}
-                  checked={categoryFilter.selected.has(cat)}
-                  closeOnClick={false}
-                  onCheckedChange={(checked) => {
-                    const next = new Set(categoryFilter.selected)
-                    if (checked) next.add(cat)
-                    else next.delete(cat)
-                    onCategoryFilterChange({ ...categoryFilter, selected: next })
-                  }}
-                >
-                  {cat}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CategoryFilterDropdown
+          categories={categories}
+          value={categoryFilter}
+          onChange={onCategoryFilterChange}
+        />
         {hiddenCount > 0 && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <EyeOff className="size-3.5" />

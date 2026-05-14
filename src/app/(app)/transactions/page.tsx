@@ -11,8 +11,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TransactionForm } from "./components/transaction-form"
-import { MonthPicker } from "./components/month-picker"
+import { TransactionsFilters } from "./components/transactions-filters"
 import { PluggyImportButton } from "@/components/transactions/pluggy-import-button"
+import { applyCategoryFilter } from "@/app/(app)/analytics/lib/category-filter"
+import type { CategoryFilter, Transaction } from "@/app/(app)/analytics/types"
 import Link from "next/link"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -33,51 +35,68 @@ const formatCurrency = (value: number) =>
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{
+    startDate?: string
+    endDate?: string
+    cat?: string
+    catMode?: string
+  }>
 }) {
   const supabase = await createClient()
 
-  const { month } = await searchParams
+  const params = await searchParams
   const now = new Date()
-  const selectedMonth = month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-  const [year, mon] = selectedMonth.split("-").map(Number)
-  const firstOfMonth = `${selectedMonth}-01`
-  const firstOfNextMonth = new Date(year, mon, 1).toISOString().split("T")[0]
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, "0")
+  const lastDay = new Date(yyyy, now.getMonth() + 1, 0).getDate()
+  const startDate = params.startDate ?? `${yyyy}-${mm}-01`
+  const endDate = params.endDate ?? `${yyyy}-${mm}-${String(lastDay).padStart(2, "0")}`
 
-  const [
-    { data: transactions },
-    { data: accounts },
-    { data: categories },
-    { data: monthTransactions },
-  ] = await Promise.all([
-    supabase
-      .from("transaction")
-      .select("*, account(account_name), re_category_transaction(category_id, category(category_name))")
-      .eq("is_provisional", false)
-      .gte("date", firstOfMonth)
-      .lt("date", firstOfNextMonth)
-      .order("date", { ascending: false }),
-    supabase
-      .from("account")
-      .select("account_id, account_name")
-      .order("account_name"),
-    supabase
-      .from("category")
-      .select("category_id, category_name, type")
-      .order("category_name"),
-    supabase
-      .from("transaction")
-      .select("amount, type")
-      .eq("is_provisional", false)
-      .gte("date", firstOfMonth)
-      .lt("date", firstOfNextMonth),
-  ])
+  const categoryFilter: CategoryFilter = {
+    mode: params.catMode === "exclude" ? "exclude" : "include",
+    selected: new Set(
+      (params.cat ?? "")
+        .split(",")
+        .map((s) => decodeURIComponent(s).trim())
+        .filter(Boolean)
+    ),
+  }
 
-  const totalReceitas = (monthTransactions ?? [])
+  const [{ data: transactionsData }, { data: accounts }, { data: categories }] =
+    await Promise.all([
+      supabase
+        .from("transaction")
+        .select(
+          "*, account(account_name), re_category_transaction(category_id, category(category_name))"
+        )
+        .eq("is_provisional", false)
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: false }),
+      supabase
+        .from("account")
+        .select("account_id, account_name")
+        .order("account_name"),
+      supabase
+        .from("category")
+        .select("category_id, category_name, type")
+        .order("category_name"),
+    ])
+
+  const transactions = applyCategoryFilter(
+    (transactionsData ?? []) as unknown as Transaction[],
+    categoryFilter
+  )
+
+  const categoryNames = (categories ?? [])
+    .map((c) => c.category_name)
+    .filter((name): name is string => !!name)
+
+  const totalReceitas = transactions
     .filter((t) => t.type === "credit")
     .reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0)
 
-  const totalDespesas = (monthTransactions ?? [])
+  const totalDespesas = transactions
     .filter((t) => t.type === "debit")
     .reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0)
 
@@ -109,7 +128,6 @@ export default async function TransactionsPage({
         }
         action={
           <div className="flex items-center gap-3">
-            <MonthPicker value={selectedMonth} />
             <PluggyImportButton accounts={accounts ?? []} />
             <TransactionForm
               accounts={accounts ?? []}
@@ -119,11 +137,17 @@ export default async function TransactionsPage({
         }
       />
 
+      <TransactionsFilters
+        startDate={startDate}
+        endDate={endDate}
+        categories={categoryNames}
+      />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Receitas do Mês
+              Receitas do Período
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -135,7 +159,7 @@ export default async function TransactionsPage({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Despesas do Mês
+              Despesas do Período
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -147,7 +171,7 @@ export default async function TransactionsPage({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Saldo do Mês
+              Saldo do Período
             </CardTitle>
           </CardHeader>
           <CardContent>

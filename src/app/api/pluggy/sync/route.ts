@@ -6,7 +6,7 @@ import { dateWindow, mapPluggyTransaction } from "@/lib/pluggy/map";
 import { classifyRows } from "@/lib/transactions/classifier";
 import type { BankSource, ParsedRow } from "@/lib/transactions/types";
 
-const ALLOWED_DAYS = new Set([20, 30]);
+const ALLOWED_DAYS = new Set([1, 2, 3, 5, 8, 13, 21, 30]);
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const days = body.days ?? 30;
   if (!itemId || typeof accountId !== "number" || !ALLOWED_DAYS.has(days)) {
     return NextResponse.json(
-      { error: "Parâmetros inválidos: itemId (string), accountId (number), days (20 ou 30)" },
+      { error: "Parâmetros inválidos: itemId (string), accountId (number), days (1, 2, 3, 5, 8, 13, 21 ou 30)" },
       { status: 400 },
     );
   }

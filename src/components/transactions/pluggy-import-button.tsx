@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PluggyConnect } from "react-pluggy-connect";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+
+const PluggyConnect = dynamic(
+  () => import("react-pluggy-connect").then((m) => m.PluggyConnect),
+  { ssr: false },
+);
 import {
   Dialog,
   DialogContent,
@@ -26,7 +31,7 @@ export function PluggyImportButton({ accounts }: { accounts: Account[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [accountId, setAccountId] = useState<string>("");
-  const [days, setDays] = useState<"20" | "30">("30");
+  const [days, setDays] = useState<string>("30");
   const [connectToken, setConnectToken] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -103,12 +108,18 @@ export function PluggyImportButton({ accounts }: { accounts: Account[] }) {
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Período</label>
-              <Select value={days} onValueChange={(v) => setDays((v as "20" | "30") ?? "30")}>
+              <Select value={days} onValueChange={(v) => setDays(v ?? "30")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="20">Últimos 20 dias</SelectItem>
+                  <SelectItem value="1">Último 1 dia</SelectItem>
+                  <SelectItem value="2">Últimos 2 dias</SelectItem>
+                  <SelectItem value="3">Últimos 3 dias</SelectItem>
+                  <SelectItem value="5">Últimos 5 dias</SelectItem>
+                  <SelectItem value="8">Últimos 8 dias</SelectItem>
+                  <SelectItem value="13">Últimos 13 dias</SelectItem>
+                  <SelectItem value="21">Últimos 21 dias</SelectItem>
                   <SelectItem value="30">Últimos 30 dias</SelectItem>
                 </SelectContent>
               </Select>
