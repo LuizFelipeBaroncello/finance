@@ -55,6 +55,20 @@ export async function forgotPassword(formData: FormData) {
   return { success: "Verifique seu e-mail para redefinir a senha." };
 }
 
+export async function updatePassword(formData: FormData) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.updateUser({
+    password: formData.get("password") as string,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect("/dashboard");
+}
+
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
