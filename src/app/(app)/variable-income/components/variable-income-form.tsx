@@ -12,13 +12,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { OptionSelect } from "@/components/ui/option-select"
 import { createVariableIncome, updateVariableIncome, deleteVariableIncome } from "../actions"
 
 type VariableIncome = {
@@ -132,18 +126,16 @@ export function VariableIncomeForm({ variableIncome, institutions }: VariableInc
                 <label className="text-sm font-medium text-foreground">
                   Tipo de Ativo
                 </label>
-                <Select value={assetType} onValueChange={(v) => setAssetType(v ?? "")}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ASSET_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <OptionSelect
+                  value={assetType}
+                  onValueChange={setAssetType}
+                  placeholder="Selecione o tipo"
+                  triggerClassName="w-full"
+                  options={ASSET_TYPE_OPTIONS.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
+                />
                 <input type="hidden" name="asset_type" value={assetType} />
               </div>
             </div>
@@ -164,18 +156,16 @@ export function VariableIncomeForm({ variableIncome, institutions }: VariableInc
               <label className="text-sm font-medium text-foreground">
                 Instituição (opcional)
               </label>
-              <Select value={institutionId} onValueChange={(v) => setInstitutionId(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione a instituição" />
-                </SelectTrigger>
-                <SelectContent>
-                  {institutions.map((inst) => (
-                    <SelectItem key={inst.institution_id} value={String(inst.institution_id)}>
-                      {inst.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={institutionId}
+                onValueChange={setInstitutionId}
+                placeholder="Selecione a instituição"
+                triggerClassName="w-full"
+                options={institutions.map((inst) => ({
+                  value: String(inst.institution_id),
+                  label: inst.name,
+                }))}
+              />
               <input type="hidden" name="institution_id" value={institutionId} />
             </div>
 

@@ -91,6 +91,7 @@ export type Database = {
           category_name: string
           client_id: number
           parent_category_id: number | null
+          macro_category_id: number | null
           type: Database["finance"]["Enums"]["transaction_type"]
           created_at: string
           updated_at: string
@@ -100,6 +101,7 @@ export type Database = {
           category_name: string
           client_id: number
           parent_category_id?: number | null
+          macro_category_id?: number | null
           type?: Database["finance"]["Enums"]["transaction_type"]
           created_at?: string
           updated_at?: string
@@ -109,6 +111,7 @@ export type Database = {
           category_name?: string
           client_id?: number
           parent_category_id?: number | null
+          macro_category_id?: number | null
           type?: Database["finance"]["Enums"]["transaction_type"]
           created_at?: string
           updated_at?: string
@@ -242,6 +245,134 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_recat_category"
+            columns: ["category_id"]
+            referencedRelation: "category"
+            referencedColumns: ["category_id"]
+          }
+        ]
+      }
+      macro_category: {
+        Row: {
+          macro_category_id: number
+          name: string
+          slug: string
+          display_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          macro_category_id?: number
+          name: string
+          slug: string
+          display_order: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          macro_category_id?: number
+          name?: string
+          slug?: string
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      goal: {
+        Row: {
+          goal_id: number
+          client_id: number
+          macro_category_id: number
+          target_percentage: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          goal_id?: number
+          client_id: number
+          macro_category_id: number
+          target_percentage: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          goal_id?: number
+          client_id?: number
+          macro_category_id?: number
+          target_percentage?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_client_fkey"
+            columns: ["client_id"]
+            referencedRelation: "client"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "goal_macro_fkey"
+            columns: ["macro_category_id"]
+            referencedRelation: "macro_category"
+            referencedColumns: ["macro_category_id"]
+          }
+        ]
+      }
+      period_goal: {
+        Row: {
+          period_goal_id: number
+          client_id: number
+          macro_category_id: number | null
+          category_id: number | null
+          period_type: "quarter" | "semester" | "year"
+          year: number | null
+          period_index: number | null
+          kind: "cap" | "target"
+          amount: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          period_goal_id?: number
+          client_id: number
+          macro_category_id?: number | null
+          category_id?: number | null
+          period_type: "quarter" | "semester" | "year"
+          year?: number | null
+          period_index?: number | null
+          kind: "cap" | "target"
+          amount: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          period_goal_id?: number
+          client_id?: number
+          macro_category_id?: number | null
+          category_id?: number | null
+          period_type?: "quarter" | "semester" | "year"
+          year?: number | null
+          period_index?: number | null
+          kind?: "cap" | "target"
+          amount?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "period_goal_client_fkey"
+            columns: ["client_id"]
+            referencedRelation: "client"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "period_goal_macro_fkey"
+            columns: ["macro_category_id"]
+            referencedRelation: "macro_category"
+            referencedColumns: ["macro_category_id"]
+          },
+          {
+            foreignKeyName: "period_goal_category_fkey"
             columns: ["category_id"]
             referencedRelation: "category"
             referencedColumns: ["category_id"]

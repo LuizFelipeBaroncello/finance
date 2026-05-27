@@ -17,6 +17,7 @@ import {
   Tag,
   BarChart2,
   FileBarChart,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,7 @@ const NAV: NavItem[] = [
       { label: "Relatório", href: "/analytics/report", icon: FileBarChart },
     ],
   },
+  { label: "Metas", href: "/goals", icon: Target },
   {
     label: "Configurações",
     icon: Building2,

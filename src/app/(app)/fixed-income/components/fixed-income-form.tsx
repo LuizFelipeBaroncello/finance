@@ -12,13 +12,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { OptionSelect } from "@/components/ui/option-select"
 import { createFixedIncome, updateFixedIncome, deleteFixedIncome } from "../actions"
 
 type FixedIncome = {
@@ -141,37 +135,35 @@ export function FixedIncomeForm({ fixedIncome, institutions }: FixedIncomeFormPr
             {/* Tipo */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Tipo</label>
-              <Select value={type} onValueChange={(v) => setType(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={type}
+                onValueChange={setType}
+                placeholder="Selecione o tipo"
+                triggerClassName="w-full"
+                options={TYPE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
               <input type="hidden" name="type" value={type} />
             </div>
 
             {/* Instituição */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Instituição</label>
-              <Select value={institutionId} onValueChange={(v) => setInstitutionId(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione a instituição" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
-                  {institutions.map((inst) => (
-                    <SelectItem key={inst.institution_id} value={String(inst.institution_id)}>
-                      {inst.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={institutionId}
+                onValueChange={setInstitutionId}
+                placeholder="Selecione a instituição"
+                triggerClassName="w-full"
+                options={[
+                  { value: "", label: "Nenhuma" },
+                  ...institutions.map((inst) => ({
+                    value: String(inst.institution_id),
+                    label: inst.name,
+                  })),
+                ]}
+              />
               <input type="hidden" name="institution_id" value={institutionId} />
             </div>
 
@@ -192,18 +184,16 @@ export function FixedIncomeForm({ fixedIncome, institutions }: FixedIncomeFormPr
             {/* Tipo de Taxa */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Tipo de Taxa</label>
-              <Select value={rateType} onValueChange={(v) => setRateType(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo de taxa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RATE_TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={rateType}
+                onValueChange={setRateType}
+                placeholder="Selecione o tipo de taxa"
+                triggerClassName="w-full"
+                options={RATE_TYPE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
               <input type="hidden" name="rate_type" value={rateType} />
             </div>
 

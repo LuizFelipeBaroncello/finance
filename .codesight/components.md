@@ -5,6 +5,7 @@
 - **AccountChart** [client] — props: data — `src/app/(app)/analytics/components/account-chart.tsx`
 - **AnalyticsDashboard** [client] — props: transactions, categories, granularity — `src/app/(app)/analytics/components/analytics-dashboard.tsx`
 - **CategoryChart** [client] — props: data — `src/app/(app)/analytics/components/category-chart.tsx`
+- **CategoryFilterDropdown** [client] — props: categories, value, onChange — `src/app/(app)/analytics/components/category-filter-dropdown.tsx`
 - **EvolutionChart** [client] — props: data — `src/app/(app)/analytics/components/evolution-chart.tsx`
 - **PeriodFilter** [client] — props: startDate, endDate, granularity, basePath — `src/app/(app)/analytics/components/period-filter.tsx`
 - **SeriesEvolutionChart** [client] — props: data, seriesKeys — `src/app/(app)/analytics/components/series-evolution-chart.tsx`
@@ -28,8 +29,8 @@
 - **ProfilePage** — `src/app/(app)/profile/page.tsx`
 - **RealEstateForm** [client] — props: realEstate — `src/app/(app)/real-estate/components/real-estate-form.tsx`
 - **RealEstatePage** — `src/app/(app)/real-estate/page.tsx`
-- **MonthPicker** [client] — props: value — `src/app/(app)/transactions/components/month-picker.tsx`
 - **TransactionForm** [client] — props: transaction, accounts, categories — `src/app/(app)/transactions/components/transaction-form.tsx`
+- **TransactionsFilters** [client] — props: startDate, endDate, categories — `src/app/(app)/transactions/components/transactions-filters.tsx`
 - **ImportWizard** [client] — props: accounts, categories, initialRules — `src/app/(app)/transactions/import/components/import-wizard.tsx`
 - **ImportTransactionsPage** — `src/app/(app)/transactions/import/page.tsx`
 - **TransactionsPage** — props: searchParams — `src/app/(app)/transactions/page.tsx`
@@ -50,3 +51,4 @@
 - **Providers** [client] — `src/components/providers.tsx`
 - **ProvisionalBanner** — props: count — `src/components/provisional-banner.tsx`
 - **ClassificationTable** [client] — props: rows, categories, onChange, onCreateRule — `src/components/transactions/classification-table.tsx`
+- **PluggyImportButton** [client] — props: accounts — `src/components/transactions/pluggy-import-button.tsx`

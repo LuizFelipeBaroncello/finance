@@ -4,13 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { OptionSelect } from "@/components/ui/option-select";
 import {
   Dialog,
   DialogContent,
@@ -194,33 +188,26 @@ export function ImportWizard({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Conta de destino</label>
-                <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma conta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((a) => (
-                      <SelectItem key={a.account_id} value={String(a.account_id)}>
-                        {a.account_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <OptionSelect
+                  value={accountId}
+                  onValueChange={setAccountId}
+                  placeholder="Selecione uma conta"
+                  options={accounts.map((a) => ({
+                    value: String(a.account_id),
+                    label: a.account_name,
+                  }))}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tipo do arquivo</label>
-                <Select value={source} onValueChange={(v) => v && setSource(v as BankSource)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BANK_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {BANK_SOURCE_LABELS[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <OptionSelect
+                  value={source}
+                  onValueChange={(v) => v && setSource(v as BankSource)}
+                  options={BANK_OPTIONS.map((s) => ({
+                    value: s,
+                    label: BANK_SOURCE_LABELS[s],
+                  }))}
+                />
               </div>
             </div>
             <div className="space-y-2">

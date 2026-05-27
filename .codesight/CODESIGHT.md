@@ -2,15 +2,17 @@
 
 > **Stack:** next-app | none | react | typescript
 
-> 1 routes | 0 models | 50 components | 8 lib files | 5 env vars | 1 middleware
-> **Token savings:** this file is ~3,200 tokens. Without it, AI exploration would cost ~28,900 tokens. **Saves ~25,700 tokens per conversation.**
-> **Last scanned:** 2026-05-09 02:11 — re-run after significant changes
+> 3 routes | 0 models | 52 components | 10 lib files | 7 env vars | 1 middleware
+> **Token savings:** this file is ~0 tokens. Without it, AI exploration would cost ~0 tokens. **Saves ~0 tokens per conversation.**
+> **Last scanned:** 2026-05-14 20:20 — re-run after significant changes
 
 ---
 
 # Routes
 
 - `GET` `/auth/callback` [auth]
+- `POST` `/api/pluggy/connect-token` → out: { error } [auth]
+- `POST` `/api/pluggy/sync` → out: { error } [auth, db, cache]
 
 ---
 
@@ -21,6 +23,7 @@
 - **AccountChart** [client] — props: data — `src/app/(app)/analytics/components/account-chart.tsx`
 - **AnalyticsDashboard** [client] — props: transactions, categories, granularity — `src/app/(app)/analytics/components/analytics-dashboard.tsx`
 - **CategoryChart** [client] — props: data — `src/app/(app)/analytics/components/category-chart.tsx`
+- **CategoryFilterDropdown** [client] — props: categories, value, onChange — `src/app/(app)/analytics/components/category-filter-dropdown.tsx`
 - **EvolutionChart** [client] — props: data — `src/app/(app)/analytics/components/evolution-chart.tsx`
 - **PeriodFilter** [client] — props: startDate, endDate, granularity, basePath — `src/app/(app)/analytics/components/period-filter.tsx`
 - **SeriesEvolutionChart** [client] — props: data, seriesKeys — `src/app/(app)/analytics/components/series-evolution-chart.tsx`
@@ -44,8 +47,8 @@
 - **ProfilePage** — `src/app/(app)/profile/page.tsx`
 - **RealEstateForm** [client] — props: realEstate — `src/app/(app)/real-estate/components/real-estate-form.tsx`
 - **RealEstatePage** — `src/app/(app)/real-estate/page.tsx`
-- **MonthPicker** [client] — props: value — `src/app/(app)/transactions/components/month-picker.tsx`
 - **TransactionForm** [client] — props: transaction, accounts, categories — `src/app/(app)/transactions/components/transaction-form.tsx`
+- **TransactionsFilters** [client] — props: startDate, endDate, categories — `src/app/(app)/transactions/components/transactions-filters.tsx`
 - **ImportWizard** [client] — props: accounts, categories, initialRules — `src/app/(app)/transactions/import/components/import-wizard.tsx`
 - **ImportTransactionsPage** — `src/app/(app)/transactions/import/page.tsx`
 - **TransactionsPage** — props: searchParams — `src/app/(app)/transactions/page.tsx`
@@ -66,11 +69,18 @@
 - **Providers** [client] — `src/components/providers.tsx`
 - **ProvisionalBanner** — props: count — `src/components/provisional-banner.tsx`
 - **ClassificationTable** [client] — props: rows, categories, onChange, onCreateRule — `src/components/transactions/classification-table.tsx`
+- **PluggyImportButton** [client] — props: accounts — `src/components/transactions/pluggy-import-button.tsx`
 
 ---
 
 # Libraries
 
+- `src/lib/pluggy/client.ts` — function getPluggyClient: () => PluggyClient
+- `src/lib/pluggy/map.ts`
+  - function dateWindow: (days, now) => void
+  - function mapPluggyTransaction: (tx) => MappedRow
+  - type PluggyTransactionLike
+  - type MappedRow
 - `src/lib/supabase/client.ts` — function createClient: () => void
 - `src/lib/supabase/middleware.ts` — function updateSession: (request) => void
 - `src/lib/supabase/server.ts` — function createClient: () => void
@@ -92,6 +102,8 @@
 - `NEXT_PUBLIC_SITE_URL` (has default) — .env.example
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (has default) — .env.local
 - `NEXT_PUBLIC_SUPABASE_URL` (has default) — .env.local
+- `PLUGGY_CLIENT_ID` (has default) — .env.local
+- `PLUGGY_CLIENT_SECRET` (has default) — .env.local
 - `SUPABASE_JAVA_CLASSIFIER` **required** — scripts/seed-classification-rules.mjs
 - `SUPABASE_SERVICE_KEY` **required** — scripts/seed-classification-rules.mjs
 
@@ -121,38 +133,38 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/lib/supabase/server.ts` — imported by **30** files
-- `src/components/ui/button.tsx` — imported by **19** files
+- `src/lib/supabase/server.ts` — imported by **32** files
+- `src/components/ui/button.tsx` — imported by **20** files
 - `src/lib/utils.ts` — imported by **18** files
 - `src/components/ui/input.tsx` — imported by **13** files
 - `src/components/page-header.tsx` — imported by **10** files
 - `src/components/ui/card.tsx` — imported by **10** files
 - `src/components/ui/badge.tsx` — imported by **10** files
-- `src/lib/transactions/types.ts` — imported by **7** files
-- `src/app/(app)/analytics/types.ts` — imported by **5** files
+- `src/lib/transactions/types.ts` — imported by **9** files
+- `src/app/(app)/analytics/types.ts` — imported by **8** files
 - `src/app/(app)/classification-rules/components/rule-form.tsx` — imported by **4** files
 - `src/app/(auth)/actions.ts` — imported by **4** files
+- `src/app/(app)/analytics/lib/category-filter.ts` — imported by **3** files
+- `src/app/(app)/analytics/components/period-filter.tsx` — imported by **3** files
 - `src/app/(app)/classification-rules/components/rules-table.tsx` — imported by **3** files
-- `src/app/(app)/analytics/lib/category-filter.ts` — imported by **2** files
-- `src/app/(app)/analytics/components/period-filter.tsx` — imported by **2** files
+- `src/lib/transactions/classifier.ts` — imported by **3** files
+- `src/app/(app)/analytics/components/category-filter-dropdown.tsx` — imported by **2** files
 - `src/app/(app)/analytics/report/types.ts` — imported by **2** files
 - `src/app/(app)/classification-rules/actions.ts` — imported by **2** files
 - `src/components/sidebar.tsx` — imported by **2** files
-- `src/lib/transactions/classifier.ts` — imported by **2** files
 - `src/lib/transactions/parsers/index.ts` — imported by **2** files
-- `src/components/transactions/classification-table.tsx` — imported by **2** files
 
 ## Import Map (who imports what)
 
-- `src/lib/supabase/server.ts` ← `src/app/(app)/accounts/actions.ts`, `src/app/(app)/accounts/page.tsx`, `src/app/(app)/analytics/page.tsx`, `src/app/(app)/analytics/report/page.tsx`, `src/app/(app)/categories/actions.ts` +25 more
-- `src/components/ui/button.tsx` ← `src/app/(app)/accounts/components/account-form.tsx`, `src/app/(app)/analytics/components/period-filter.tsx`, `src/app/(app)/analytics/components/transaction-list.tsx`, `src/app/(app)/categories/components/category-form.tsx`, `src/app/(app)/classification-rules/components/rule-form.tsx` +14 more
+- `src/lib/supabase/server.ts` ← `src/app/(app)/accounts/actions.ts`, `src/app/(app)/accounts/page.tsx`, `src/app/(app)/analytics/page.tsx`, `src/app/(app)/analytics/report/page.tsx`, `src/app/(app)/categories/actions.ts` +27 more
+- `src/components/ui/button.tsx` ← `src/app/(app)/accounts/components/account-form.tsx`, `src/app/(app)/analytics/components/category-filter-dropdown.tsx`, `src/app/(app)/analytics/components/period-filter.tsx`, `src/app/(app)/analytics/components/transaction-list.tsx`, `src/app/(app)/categories/components/category-form.tsx` +15 more
 - `src/lib/utils.ts` ← `src/app/(app)/analytics/components/period-filter.tsx`, `src/app/(app)/analytics/report/components/financial-report-table.tsx`, `src/components/page-header.tsx`, `src/components/sidebar.tsx`, `src/components/ui/avatar.tsx` +13 more
 - `src/components/ui/input.tsx` ← `src/app/(app)/accounts/components/account-form.tsx`, `src/app/(app)/analytics/components/transaction-list.tsx`, `src/app/(app)/categories/components/category-form.tsx`, `src/app/(app)/classification-rules/components/rule-form.tsx`, `src/app/(app)/classification-rules/components/rules-table.tsx` +8 more
 - `src/components/page-header.tsx` ← `src/app/(app)/accounts/page.tsx`, `src/app/(app)/categories/page.tsx`, `src/app/(app)/classification-rules/page.tsx`, `src/app/(app)/fixed-income/page.tsx`, `src/app/(app)/institutions/page.tsx` +5 more
 - `src/components/ui/card.tsx` ← `src/app/(app)/analytics/components/analytics-dashboard.tsx`, `src/app/(app)/analytics/report/components/financial-report-table.tsx`, `src/app/(app)/dashboard/page.tsx`, `src/app/(app)/fixed-income/page.tsx`, `src/app/(app)/real-estate/page.tsx` +5 more
 - `src/components/ui/badge.tsx` ← `src/app/(app)/analytics/components/transaction-list.tsx`, `src/app/(app)/categories/page.tsx`, `src/app/(app)/classification-rules/components/rules-table.tsx`, `src/app/(app)/fixed-income/page.tsx`, `src/app/(app)/institutions/page.tsx` +5 more
-- `src/lib/transactions/types.ts` ← `src/app/(app)/transactions/import/actions.ts`, `src/app/(app)/transactions/import/components/import-wizard.tsx`, `src/app/(app)/transactions/review/actions.ts`, `src/app/(app)/transactions/review/components/review-client.tsx`, `src/app/(app)/transactions/review/page.tsx` +2 more
-- `src/app/(app)/analytics/types.ts` ← `src/app/(app)/analytics/components/analytics-dashboard.tsx`, `src/app/(app)/analytics/components/transaction-list.tsx`, `src/app/(app)/analytics/lib/aggregations.ts`, `src/app/(app)/analytics/lib/category-filter.ts`, `src/app/(app)/analytics/page.tsx`
+- `src/lib/transactions/types.ts` ← `src/app/(app)/transactions/import/actions.ts`, `src/app/(app)/transactions/import/components/import-wizard.tsx`, `src/app/(app)/transactions/review/actions.ts`, `src/app/(app)/transactions/review/components/review-client.tsx`, `src/app/(app)/transactions/review/page.tsx` +4 more
+- `src/app/(app)/analytics/types.ts` ← `src/app/(app)/analytics/components/analytics-dashboard.tsx`, `src/app/(app)/analytics/components/category-filter-dropdown.tsx`, `src/app/(app)/analytics/components/transaction-list.tsx`, `src/app/(app)/analytics/lib/aggregations.ts`, `src/app/(app)/analytics/lib/category-filter.ts` +3 more
 - `src/app/(app)/classification-rules/components/rule-form.tsx` ← `src/app/(app)/classification-rules/components/rules-table.tsx`, `src/app/(app)/classification-rules/page.tsx`, `src/app/(app)/transactions/import/components/import-wizard.tsx`, `src/app/(app)/transactions/review/components/review-client.tsx`
 
 ---

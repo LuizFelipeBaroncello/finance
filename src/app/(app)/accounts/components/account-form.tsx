@@ -12,13 +12,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { OptionSelect } from "@/components/ui/option-select"
 import { createAccount, updateAccount, deleteAccount } from "../actions"
 
 type Institution = {
@@ -94,18 +88,16 @@ export function AccountForm({ account, institutions }: AccountFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Instituição
               </label>
-              <Select value={institutionId} onValueChange={(v) => setInstitutionId(v ?? "")} required>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione a instituição" />
-                </SelectTrigger>
-                <SelectContent>
-                  {institutions.map((inst) => (
-                    <SelectItem key={inst.institution_id} value={inst.institution_id.toString()}>
-                      {inst.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={institutionId}
+                onValueChange={setInstitutionId}
+                placeholder="Selecione a instituição"
+                triggerClassName="w-full"
+                options={institutions.map((inst) => ({
+                  value: inst.institution_id.toString(),
+                  label: inst.name,
+                }))}
+              />
               <input type="hidden" name="institution_id" value={institutionId} />
             </div>
 

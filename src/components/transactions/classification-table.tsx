@@ -4,13 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { OptionSelect } from "@/components/ui/option-select";
 import {
   Table,
   TableBody,
@@ -147,7 +141,7 @@ function ClassificationRow({
       </TableCell>
       <TableCell className="whitespace-nowrap">{formatCurrency(row.amount)}</TableCell>
       <TableCell>
-        <Select
+        <OptionSelect
           value={row.suggestedType}
           onValueChange={(v) =>
             onChange({
@@ -155,46 +149,30 @@ function ClassificationRow({
               suggestedCategoryId: null,
             })
           }
-        >
-          <SelectTrigger className="w-[130px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="debit">Despesa</SelectItem>
-            <SelectItem value="credit">Receita</SelectItem>
-            <SelectItem value="transfer">Transferência</SelectItem>
-          </SelectContent>
-        </Select>
+          triggerClassName="w-[130px]"
+          options={[
+            { value: "debit", label: "Despesa" },
+            { value: "credit", label: "Receita" },
+            { value: "transfer", label: "Transferência" },
+          ]}
+        />
       </TableCell>
       <TableCell>
         {row.suggestedType === "transfer" ? (
           <span className="text-xs text-muted-foreground">—</span>
         ) : (
-          <Select
+          <OptionSelect
             value={row.suggestedCategoryId != null ? String(row.suggestedCategoryId) : ""}
-            onValueChange={(v) => onChange({ suggestedCategoryId: Number(v) })}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Classificar...">
-                {(value) => {
-                  if (!value) return "Classificar...";
-                  const cat = categories.find(
-                    (c) => String(c.category_id) === String(value),
-                  );
-                  return cat
-                    ? `${cat.category_id} - ${cat.category_name}`
-                    : String(value);
-                }}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {filtered.map((c) => (
-                <SelectItem key={c.category_id} value={String(c.category_id)}>
-                  {c.category_id} - {c.category_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={(v) =>
+              onChange({ suggestedCategoryId: v === "" ? null : Number(v) })
+            }
+            placeholder="Classificar..."
+            triggerClassName="w-[180px]"
+            options={filtered.map((c) => ({
+              value: String(c.category_id),
+              label: `${c.category_id} - ${c.category_name}`,
+            }))}
+          />
         )}
       </TableCell>
       <TableCell>

@@ -3,13 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { OptionSelect } from "@/components/ui/option-select";
 import {
   Table,
   TableBody,
@@ -125,22 +119,18 @@ export function RulesTable({
           onChange={(e) => setSearch(e.target.value)}
           className="sm:max-w-xs"
         />
-        <Select
+        <OptionSelect
           value={categoryFilter}
-          onValueChange={(v) => setCategoryFilter(v ?? "all")}
-        >
-          <SelectTrigger className="sm:w-[220px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as categorias</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.category_id} value={String(c.category_id)}>
-                {c.category_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={(v) => setCategoryFilter(v === "" ? "all" : v)}
+          triggerClassName="sm:w-[220px]"
+          options={[
+            { value: "all", label: "Todas as categorias" },
+            ...categories.map((c) => ({
+              value: String(c.category_id),
+              label: c.category_name,
+            })),
+          ]}
+        />
         <div className="text-sm text-muted-foreground sm:ml-auto">
           {filtered.length} de {rules.length} regra(s)
         </div>

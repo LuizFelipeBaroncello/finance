@@ -12,13 +12,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { OptionSelect } from "@/components/ui/option-select";
 import { createRule, updateRule, deleteRule } from "../actions";
 
 type Rule = {
@@ -111,21 +105,16 @@ export function RuleForm({ rule, categories, triggerLabel }: RuleFormProps) {
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Categoria</label>
-              <Select
+              <OptionSelect
                 value={categoryId}
-                onValueChange={(v) => setCategoryId(v ?? "")}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.category_id} value={String(c.category_id)}>
-                      {c.category_name} ({TYPE_LABELS[c.type] ?? c.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onValueChange={setCategoryId}
+                placeholder="Selecione uma categoria"
+                triggerClassName="w-full"
+                options={categories.map((c) => ({
+                  value: String(c.category_id),
+                  label: `${c.category_name} (${TYPE_LABELS[c.type] ?? c.type})`,
+                }))}
+              />
               <input type="hidden" name="category_id" value={categoryId} />
             </div>
 

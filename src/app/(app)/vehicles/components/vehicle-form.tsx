@@ -12,13 +12,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { OptionSelect } from "@/components/ui/option-select"
 import { createVehicle, updateVehicle, deleteVehicle } from "../actions"
 
 type Vehicle = {
@@ -120,18 +114,16 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={vehicleType} onValueChange={(v) => setVehicleType(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {VEHICLE_TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={vehicleType}
+                onValueChange={setVehicleType}
+                placeholder="Selecione o tipo"
+                triggerClassName="w-full"
+                options={VEHICLE_TYPE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
               <input type="hidden" name="vehicle_type" value={vehicleType} />
             </div>
 

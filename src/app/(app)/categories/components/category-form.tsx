@@ -12,25 +12,26 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { OptionSelect } from "@/components/ui/option-select"
 import { createCategory, updateCategory, deleteCategory } from "../actions"
 
-type Category = {
+export type CategoryFormCategory = {
   category_id: number
   category_name: string
   type: string
   parent_category_id: number | null
+  macro_category_id: number | null
+}
+
+export type MacroOption = {
+  macro_category_id: number
+  name: string
 }
 
 interface CategoryFormProps {
-  category?: Category
-  categories: Category[]
+  category?: CategoryFormCategory
+  categories: CategoryFormCategory[]
+  macros: MacroOption[]
 }
 
 const TYPE_OPTIONS = [
@@ -39,13 +40,16 @@ const TYPE_OPTIONS = [
   { value: "transfer", label: "Transferência" },
 ]
 
-export function CategoryForm({ category, categories }: CategoryFormProps) {
+export function CategoryForm({ category, categories, macros }: CategoryFormProps) {
   const isEditing = !!category
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [type, setType] = useState<string>(category?.type ?? "debit")
   const [parentId, setParentId] = useState<string>(
     category?.parent_category_id != null ? String(category.parent_category_id) : "none"
+  )
+  const [macroId, setMacroId] = useState<string>(
+    category?.macro_category_id != null ? String(category.macro_category_id) : "none"
   )
   const [isPending, startTransition] = useTransition()
 
@@ -73,7 +77,6 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
     })
   }
 
-  // Exclude the current category from parent options to avoid self-reference
   const parentOptions = categories.filter(
     (c) => !isEditing || c.category_id !== category.category_id
   )
@@ -113,38 +116,56 @@ export function CategoryForm({ category, categories }: CategoryFormProps) {
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={type} onValueChange={(v) => setType(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={type}
+                onValueChange={setType}
+                placeholder="Selecione o tipo"
+                triggerClassName="w-full"
+                options={TYPE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
               <input type="hidden" name="type" value={type} />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">
+                Macro Categoria
+              </label>
+              <OptionSelect
+                value={macroId}
+                onValueChange={setMacroId}
+                placeholder="Selecione uma macro categoria"
+                triggerClassName="w-full"
+                options={[
+                  { value: "none", label: "Nenhuma" },
+                  ...macros.map((m) => ({
+                    value: String(m.macro_category_id),
+                    label: m.name,
+                  })),
+                ]}
+              />
+              <input type="hidden" name="macro_category_id" value={macroId} />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">
                 Categoria Pai
               </label>
-              <Select value={parentId} onValueChange={(v) => setParentId(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione uma categoria pai" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {parentOptions.map((cat) => (
-                    <SelectItem key={cat.category_id} value={String(cat.category_id)}>
-                      {cat.category_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={parentId}
+                onValueChange={setParentId}
+                placeholder="Selecione uma categoria pai"
+                triggerClassName="w-full"
+                options={[
+                  { value: "none", label: "Nenhuma" },
+                  ...parentOptions.map((cat) => ({
+                    value: String(cat.category_id),
+                    label: cat.category_name,
+                  })),
+                ]}
+              />
               <input type="hidden" name="parent_category_id" value={parentId} />
             </div>
 

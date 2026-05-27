@@ -16,13 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { OptionSelect } from "@/components/ui/option-select";
 
 type Account = { account_id: number; account_name: string };
 type Status = "idle" | "tokenizing" | "connecting" | "syncing";
@@ -93,36 +87,32 @@ export function PluggyImportButton({ accounts }: { accounts: Account[] }) {
           <div className="space-y-4">
             <div className="space-y-1">
               <label className="text-sm font-medium">Conta de destino</label>
-              <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a conta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.account_id} value={String(a.account_id)}>
-                      {a.account_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={accountId}
+                onValueChange={setAccountId}
+                placeholder="Selecione a conta"
+                options={accounts.map((a) => ({
+                  value: String(a.account_id),
+                  label: a.account_name,
+                }))}
+              />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Período</label>
-              <Select value={days} onValueChange={(v) => setDays(v ?? "30")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Último 1 dia</SelectItem>
-                  <SelectItem value="2">Últimos 2 dias</SelectItem>
-                  <SelectItem value="3">Últimos 3 dias</SelectItem>
-                  <SelectItem value="5">Últimos 5 dias</SelectItem>
-                  <SelectItem value="8">Últimos 8 dias</SelectItem>
-                  <SelectItem value="13">Últimos 13 dias</SelectItem>
-                  <SelectItem value="21">Últimos 21 dias</SelectItem>
-                  <SelectItem value="30">Últimos 30 dias</SelectItem>
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={days}
+                onValueChange={(v) => setDays(v === "" ? "30" : v)}
+                options={[
+                  { value: "1", label: "Último 1 dia" },
+                  { value: "2", label: "Últimos 2 dias" },
+                  { value: "3", label: "Últimos 3 dias" },
+                  { value: "5", label: "Últimos 5 dias" },
+                  { value: "8", label: "Últimos 8 dias" },
+                  { value: "13", label: "Últimos 13 dias" },
+                  { value: "21", label: "Últimos 21 dias" },
+                  { value: "30", label: "Últimos 30 dias" },
+                ]}
+              />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button onClick={startConnect} disabled={status !== "idle"}>

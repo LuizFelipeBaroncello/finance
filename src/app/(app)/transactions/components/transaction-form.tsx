@@ -12,13 +12,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { OptionSelect } from "@/components/ui/option-select"
 import { createTransaction, updateTransaction, deleteTransaction } from "../actions"
 
 type Transaction = {
@@ -181,18 +175,16 @@ export function TransactionForm({ transaction, accounts, categories }: Transacti
               <label className="text-sm font-medium text-foreground">
                 Tipo
               </label>
-              <Select value={type} onValueChange={(v) => handleTypeChange(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={type}
+                onValueChange={handleTypeChange}
+                placeholder="Selecione o tipo"
+                triggerClassName="w-full"
+                options={TYPE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
               <input type="hidden" name="type" value={type} />
             </div>
 
@@ -200,18 +192,16 @@ export function TransactionForm({ transaction, accounts, categories }: Transacti
               <label className="text-sm font-medium text-foreground">
                 Conta
               </label>
-              <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione uma conta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((acc) => (
-                    <SelectItem key={acc.account_id} value={String(acc.account_id)}>
-                      {acc.account_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionSelect
+                value={accountId}
+                onValueChange={setAccountId}
+                placeholder="Selecione uma conta"
+                triggerClassName="w-full"
+                options={accounts.map((acc) => ({
+                  value: String(acc.account_id),
+                  label: acc.account_name,
+                }))}
+              />
               <input type="hidden" name="account_id" value={accountId} />
             </div>
 

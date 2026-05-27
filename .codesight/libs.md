@@ -1,5 +1,11 @@
 # Libraries
 
+- `src/lib/pluggy/client.ts` — function getPluggyClient: () => PluggyClient
+- `src/lib/pluggy/map.ts`
+  - function dateWindow: (days, now) => void
+  - function mapPluggyTransaction: (tx) => MappedRow
+  - type PluggyTransactionLike
+  - type MappedRow
 - `src/lib/supabase/client.ts` — function createClient: () => void
 - `src/lib/supabase/middleware.ts` — function updateSession: (request) => void
 - `src/lib/supabase/server.ts` — function createClient: () => void
