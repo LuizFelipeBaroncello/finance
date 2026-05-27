@@ -3,10 +3,8 @@
 import * as React from "react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { useFormatBRL } from "@/lib/currency"
 import type { Macro } from "./goals-client"
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 export function Simulation({
   macros,
@@ -19,6 +17,7 @@ export function Simulation({
   totalsByMacro: Record<string, number>
   colors: string[]
 }) {
+  const formatBRL = useFormatBRL()
   const [raw, setRaw] = React.useState("")
   const amount = parseFloat(raw.replace(",", ".")) || 0
 

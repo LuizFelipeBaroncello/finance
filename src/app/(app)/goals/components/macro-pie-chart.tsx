@@ -1,15 +1,15 @@
 "use client"
 
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts"
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+import { useFormatBRL } from "@/lib/currency"
 
 export function MacroPieChart({
   data,
 }: {
   data: Array<{ name: string; value: number; color: string }>
 }) {
+  const formatBRL = useFormatBRL()
+
   if (data.length === 0) {
     return (
       <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">

@@ -2,9 +2,7 @@
 
 import * as React from "react"
 import type { GoalTransaction, Macro } from "./goals-client"
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+import { useFormatBRL } from "@/lib/currency"
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
@@ -16,6 +14,7 @@ export function TransactionsByMacro({
   macros: Macro[]
   transactions: GoalTransaction[]
 }) {
+  const formatBRL = useFormatBRL()
   const grouped = React.useMemo(() => {
     const map = new Map<number | "null", GoalTransaction[]>()
     for (const t of transactions) {

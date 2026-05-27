@@ -8,6 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
+import { useFormatBRL } from "@/lib/currency"
 
 interface ChartData {
   name: string
@@ -19,10 +20,9 @@ interface PatrimonyChartProps {
   data: ChartData[]
 }
 
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
-
 export function PatrimonyChart({ data }: PatrimonyChartProps) {
+  const formatBRL = useFormatBRL()
+
   if (data.length === 0) {
     return (
       <div className="flex h-[400px] items-center justify-center text-muted-foreground text-sm">

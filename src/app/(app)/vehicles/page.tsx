@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Money } from "@/lib/currency"
 import { VehicleForm } from "./components/vehicle-form"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -18,9 +19,6 @@ const TYPE_LABELS: Record<string, string> = {
   truck: "Caminhão",
   other: "Outro",
 }
-
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
 
 export default async function VehiclesPage() {
   const supabase = await createClient()
@@ -48,13 +46,13 @@ export default async function VehiclesPage() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Patrimônio em Veículos</p>
-            <p className="text-2xl font-semibold mt-1">{fmt(totalEstimated)}</p>
+            <p className="text-2xl font-semibold mt-1"><Money value={totalEstimated} /></p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Total Investido</p>
-            <p className="text-2xl font-semibold mt-1">{fmt(totalInvested)}</p>
+            <p className="text-2xl font-semibold mt-1"><Money value={totalInvested} /></p>
           </CardContent>
         </Card>
         <Card>
@@ -101,9 +99,9 @@ export default async function VehiclesPage() {
                   {[v.brand, v.model].filter(Boolean).join(" ") || "—"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{v.year ?? "—"}</TableCell>
-                <TableCell>{fmt(v.purchase_price)}</TableCell>
+                <TableCell><Money value={v.purchase_price} /></TableCell>
                 <TableCell>
-                  {v.current_estimated_value ? fmt(v.current_estimated_value) : "—"}
+                  {v.current_estimated_value ? <Money value={v.current_estimated_value} /> : "—"}
                 </TableCell>
                 <TableCell>
                   {v.is_financed ? (

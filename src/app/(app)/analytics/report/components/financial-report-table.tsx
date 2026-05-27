@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useFormatBRL } from "@/lib/currency"
 import type { ReportRow } from "../types"
 
 const MONTH_INDEX: Record<string, number> = {
@@ -39,9 +40,6 @@ function parseMes(mes: string): number {
   const year = Number.isNaN(yyNum) ? 0 : yyNum < 100 ? 2000 + yyNum : yyNum
   return year * 12 + m
 }
-
-const fmt = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 type DateRange = { startDate: string; endDate: string }
 
@@ -92,6 +90,7 @@ function ReportLink({
 }
 
 export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
+  const fmt = useFormatBRL()
   const [hidden, setHidden] = useState<Set<string>>(new Set())
 
   const meses = useMemo(() => {

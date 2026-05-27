@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Money } from "@/lib/currency"
 import { RealEstateForm } from "./components/real-estate-form"
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
@@ -19,9 +20,6 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
   commercial: "Comercial",
   other: "Outro",
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 export default async function RealEstatePage() {
   const supabase = await createClient()
@@ -62,7 +60,7 @@ export default async function RealEstatePage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-foreground">
-              {formatCurrency(totalPatrimony)}
+              <Money value={totalPatrimony} />
             </p>
           </CardContent>
         </Card>
@@ -75,7 +73,7 @@ export default async function RealEstatePage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-foreground">
-              {formatCurrency(totalInvested)}
+              <Money value={totalInvested} />
             </p>
           </CardContent>
         </Card>
@@ -126,10 +124,10 @@ export default async function RealEstatePage() {
                     {PROPERTY_TYPE_LABELS[property.property_type] ?? property.property_type}
                   </Badge>
                 </TableCell>
-                <TableCell>{formatCurrency(property.purchase_price)}</TableCell>
+                <TableCell><Money value={property.purchase_price} /></TableCell>
                 <TableCell>
                   {property.current_estimated_value
-                    ? formatCurrency(property.current_estimated_value)
+                    ? <Money value={property.current_estimated_value} />
                     : "—"}
                 </TableCell>
                 <TableCell>

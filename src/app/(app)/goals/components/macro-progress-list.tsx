@@ -1,10 +1,8 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useFormatBRL } from "@/lib/currency"
 import type { Macro } from "./goals-client"
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 export function MacroProgressList({
   macros,
@@ -19,6 +17,8 @@ export function MacroProgressList({
   totalSpent: number
   colors: string[]
 }) {
+  const formatBRL = useFormatBRL()
+
   if (totalSpent === 0) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">

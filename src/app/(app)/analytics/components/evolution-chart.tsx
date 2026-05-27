@@ -11,6 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
+import { formatBRL as formatBRLBase, MASK, useCurrencyVisibility } from "@/lib/currency"
 
 export interface EvolutionData {
   label: string
@@ -34,15 +35,16 @@ const SERIES = [
   { key: "acumulado", color: "#a855f7" },
 ]
 
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
-
-const formatShort = (value: number) => {
-  if (Math.abs(value) >= 1000) return `R$ ${(value / 1000).toFixed(1)}k`
-  return `R$ ${value.toFixed(0)}`
-}
-
 export function EvolutionChart({ data }: { data: EvolutionData[] }) {
+  const { hidden: valuesHidden } = useCurrencyVisibility()
+  const formatBRL = (value: number) =>
+    valuesHidden ? MASK : formatBRLBase(value)
+  const formatShort = (value: number) => {
+    if (valuesHidden) return MASK
+    if (Math.abs(value) >= 1000) return `R$ ${(value / 1000).toFixed(1)}k`
+    return `R$ ${value.toFixed(0)}`
+  }
+
   const [hidden, setHidden] = useState<Set<string>>(new Set())
 
   const handleLegendClick = useCallback((dataKey: string) => {

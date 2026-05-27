@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Money } from "@/lib/currency"
 import { TransactionForm } from "./components/transaction-form"
 import { TransactionsFilters } from "./components/transactions-filters"
 import { PluggyImportButton } from "@/components/transactions/pluggy-import-button"
@@ -28,9 +29,6 @@ const TYPE_VARIANTS: Record<string, "destructive" | "default" | "secondary"> = {
   credit: "default",
   transfer: "secondary",
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 export default async function TransactionsPage({
   searchParams,
@@ -152,7 +150,7 @@ export default async function TransactionsPage({
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(totalReceitas)}
+              <Money value={totalReceitas} />
             </p>
           </CardContent>
         </Card>
@@ -164,7 +162,7 @@ export default async function TransactionsPage({
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {formatCurrency(totalDespesas)}
+              <Money value={totalDespesas} />
             </p>
           </CardContent>
         </Card>
@@ -176,7 +174,7 @@ export default async function TransactionsPage({
           </CardHeader>
           <CardContent>
             <p className={`text-2xl font-bold ${saldoMes >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-              {formatCurrency(saldoMes)}
+              <Money value={saldoMes} />
             </p>
           </CardContent>
         </Card>
@@ -226,7 +224,7 @@ export default async function TransactionsPage({
                     }`}
                   >
                     {tx.type === "credit" ? "+" : tx.type === "debit" ? "-" : ""}
-                    {formatCurrency(Math.abs(tx.amount ?? 0))}
+                    <Money value={Math.abs(tx.amount ?? 0)} />
                   </TableCell>
                   <TableCell>
                     <Badge variant={TYPE_VARIANTS[tx.type] ?? "secondary"}>

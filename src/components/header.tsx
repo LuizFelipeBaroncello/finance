@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -21,6 +21,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/sidebar";
+import { useCurrencyVisibility } from "@/lib/currency";
 import { logout } from "@/app/(auth)/actions";
 
 type HeaderProps = {
@@ -41,6 +42,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [, startTransition] = useTransition();
   const router = useRouter();
+  const { hidden, toggle } = useCurrencyVisibility();
 
   return (
     <header className="flex h-14 items-center gap-3 border-b border-border bg-background px-safe lg:px-6 sticky top-0 z-10">
@@ -61,6 +63,21 @@ export function Header({ userName, userEmail }: HeaderProps) {
       </span>
 
       <div className="ml-auto flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggle}
+          title={hidden ? "Mostrar valores" : "Esconder valores"}
+        >
+          {hidden ? (
+            <EyeOff className="size-5" />
+          ) : (
+            <Eye className="size-5" />
+          )}
+          <span className="sr-only">
+            {hidden ? "Mostrar valores" : "Esconder valores"}
+          </span>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 gap-2 px-2" />}>
             <Avatar className="size-6">

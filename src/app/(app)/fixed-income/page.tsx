@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Money } from "@/lib/currency"
 import { FixedIncomeForm } from "./components/fixed-income-form"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -32,9 +33,6 @@ const RATE_TYPE_LABELS: Record<string, string> = {
   pos_ipca: "IPCA",
   pos_selic: "Selic",
 }
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 export default async function FixedIncomePage() {
   const supabase = await createClient()
@@ -67,13 +65,13 @@ export default async function FixedIncomePage() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Total Investido</p>
-            <p className="mt-1 text-2xl font-bold">{formatBRL(totalInvested)}</p>
+            <p className="mt-1 text-2xl font-bold"><Money value={totalInvested} /></p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Retorno Esperado</p>
-            <p className="mt-1 text-2xl font-bold">{formatBRL(totalExpectedReturn)}</p>
+            <p className="mt-1 text-2xl font-bold"><Money value={totalExpectedReturn} /></p>
           </CardContent>
         </Card>
         <Card>
@@ -116,7 +114,7 @@ export default async function FixedIncomePage() {
                 <TableCell className="text-muted-foreground">
                   {(fi.institution as { name: string } | null)?.name ?? "—"}
                 </TableCell>
-                <TableCell>{formatBRL(fi.invested_amount)}</TableCell>
+                <TableCell><Money value={fi.invested_amount} /></TableCell>
                 <TableCell className="text-muted-foreground">
                   {RATE_TYPE_LABELS[fi.rate_type] ?? fi.rate_type} {fi.rate_value}%
                 </TableCell>

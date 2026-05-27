@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Money } from "@/lib/currency"
 import { VariableIncomeForm } from "./components/variable-income-form"
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -29,9 +30,6 @@ const ASSET_TYPE_BADGE_VARIANTS: Record<string, string> = {
   bdr: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
   other: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 const formatNumber = (value: number, decimals = 2) =>
   new Intl.NumberFormat("pt-BR", {
@@ -76,7 +74,7 @@ export default async function VariableIncomePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(totalInvested)}</p>
+            <p className="text-2xl font-bold"><Money value={totalInvested} /></p>
             <p className="text-xs text-muted-foreground mt-1">Ativos em carteira</p>
           </CardContent>
         </Card>
@@ -100,7 +98,7 @@ export default async function VariableIncomePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(totalStocks)}</p>
+            <p className="text-2xl font-bold"><Money value={totalStocks} /></p>
             <p className="text-xs text-muted-foreground mt-1">Somente ações (stock)</p>
           </CardContent>
         </Card>
@@ -149,10 +147,10 @@ export default async function VariableIncomePage() {
                   {formatNumber(asset.quantity, 8)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {formatCurrency(asset.avg_price)}
+                  <Money value={asset.avg_price} />
                 </TableCell>
                 <TableCell className="text-right font-mono font-medium">
-                  {formatCurrency(asset.total_invested)}
+                  <Money value={asset.total_invested} />
                 </TableCell>
                 <TableCell>
                   <Badge variant={asset.is_sold ? "secondary" : "default"}>

@@ -6,9 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trash2 } from "lucide-react"
 import type { ResolvedPeriodGoal } from "./goals-client"
 import { deletePeriodGoal } from "../actions"
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+import { useFormatBRL } from "@/lib/currency"
 
 export function PeriodProgressList({
   resolved,
@@ -17,6 +15,8 @@ export function PeriodProgressList({
   resolved: ResolvedPeriodGoal[]
   onDeleted?: () => void
 }) {
+  const formatBRL = useFormatBRL()
+
   if (resolved.length === 0) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">

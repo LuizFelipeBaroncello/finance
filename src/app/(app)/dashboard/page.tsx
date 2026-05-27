@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Money } from "@/lib/currency"
 import { PatrimonyChart } from "./patrimony-chart"
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 const formatDate = (date: string) =>
   new Date(date.replace(" ", "T")).toLocaleDateString("pt-BR")
@@ -88,7 +86,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-blue-100">{formatBRL(netWorth)}</p>
+            <p className="text-3xl font-bold text-blue-100"><Money value={netWorth} /></p>
           </CardContent>
         </Card>
 
@@ -100,7 +98,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-zinc-100">{formatBRL(totalAssets)}</p>
+            <p className="text-2xl font-bold text-zinc-100"><Money value={totalAssets} /></p>
           </CardContent>
         </Card>
 
@@ -112,7 +110,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-300">{formatBRL(totalLiabilities)}</p>
+            <p className="text-2xl font-bold text-red-300"><Money value={totalLiabilities} /></p>
           </CardContent>
         </Card>
 
@@ -124,7 +122,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-zinc-100">{formatBRL(totalFixedIncome)}</p>
+            <p className="text-xl font-semibold text-zinc-100"><Money value={totalFixedIncome} /></p>
           </CardContent>
         </Card>
 
@@ -136,7 +134,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-zinc-100">{formatBRL(totalVariableIncome)}</p>
+            <p className="text-xl font-semibold text-zinc-100"><Money value={totalVariableIncome} /></p>
           </CardContent>
         </Card>
 
@@ -148,7 +146,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-zinc-100">{formatBRL(totalRealEstate)}</p>
+            <p className="text-xl font-semibold text-zinc-100"><Money value={totalRealEstate} /></p>
           </CardContent>
         </Card>
 
@@ -160,7 +158,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-zinc-100">{formatBRL(totalVehicles)}</p>
+            <p className="text-xl font-semibold text-zinc-100"><Money value={totalVehicles} /></p>
           </CardContent>
         </Card>
       </div>
@@ -225,7 +223,7 @@ export default async function DashboardPage() {
                             }`}
                           >
                             {tx.type === "debit" ? "-" : "+"}
-                            {formatBRL(Math.abs(tx.amount))}
+                            <Money value={Math.abs(tx.amount)} />
                           </td>
                         </tr>
                       )

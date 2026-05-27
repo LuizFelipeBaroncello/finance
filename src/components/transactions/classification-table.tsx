@@ -23,6 +23,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { ClassifiedRow, TransactionKind } from "@/lib/transactions/types";
+import { Money } from "@/lib/currency";
 
 type Category = { category_id: number; category_name: string; type: string };
 
@@ -32,9 +33,6 @@ export type ClassificationTableProps<T extends ClassifiedRow = ClassifiedRow> = 
   onChange: (rows: T[]) => void;
   onCreateRule: (pattern: string, categoryId: number) => Promise<void>;
 };
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 export function ClassificationTable<T extends ClassifiedRow = ClassifiedRow>({
   rows,
@@ -139,7 +137,7 @@ function ClassificationRow({
           title={row.description}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap">{formatCurrency(row.amount)}</TableCell>
+      <TableCell className="whitespace-nowrap"><Money value={row.amount} /></TableCell>
       <TableCell>
         <OptionSelect
           value={row.suggestedType}

@@ -18,9 +18,7 @@ import {
 } from "../lib/aggregations"
 import { applyCategoryFilter } from "../lib/category-filter"
 import type { CategoryFilter, Transaction } from "../types"
-
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+import { useFormatBRL } from "@/lib/currency"
 
 interface AnalyticsDashboardProps {
   transactions: Transaction[]
@@ -33,6 +31,7 @@ export function AnalyticsDashboard({
   categories,
   granularity,
 }: AnalyticsDashboardProps) {
+  const formatBRL = useFormatBRL()
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>({

@@ -17,6 +17,7 @@ import { useState } from "react"
 import { applyCategoryFilter } from "../lib/category-filter"
 import { CategoryFilterDropdown } from "./category-filter-dropdown"
 import type { CategoryFilter, Transaction } from "../types"
+import { useFormatBRL } from "@/lib/currency"
 
 type SortKey = "date" | "description" | "amount" | "type" | "account"
 type SortDir = "asc" | "desc"
@@ -32,9 +33,6 @@ const TYPE_VARIANTS: Record<string, "destructive" | "default" | "secondary"> = {
   credit: "default",
   transfer: "secondary",
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
 function SortIcon({ column, sortKey, sortDir }: { column: SortKey; sortKey: SortKey; sortDir: SortDir }) {
   if (column !== sortKey) return <ArrowUpDown className="ml-1 inline size-3.5 text-muted-foreground/50" />
@@ -65,6 +63,7 @@ export function TransactionList({
   onToggleHidden,
   onClearHidden,
 }: TransactionListProps) {
+  const formatCurrency = useFormatBRL()
   const [sortKey, setSortKey] = useState<SortKey>("date")
   const [sortDir, setSortDir] = useState<SortDir>("desc")
 
