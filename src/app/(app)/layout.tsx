@@ -50,12 +50,14 @@ export default async function AppLayout({
   const userEmail = user.email ?? "";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <ProvisionalBanner count={provisionalCount ?? 0} />
         <Header userName={userName} userEmail={userEmail} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto overscroll-contain px-safe pt-4 pb-safe lg:px-6 lg:pt-6">
+          {children}
+        </main>
       </div>
     </div>
   );

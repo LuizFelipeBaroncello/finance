@@ -126,5 +126,33 @@
   }
   html {
     @apply font-sans;
+    /* Stop iOS Safari from inflating text when the device rotates to landscape. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  /* Kill the gray flash iOS draws over tapped controls; we have our own focus
+     and active states. */
+  a,
+  button,
+  [role="button"],
+  label {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Safe-area utilities for the iPhone notch / home indicator. max() keeps the
+   baseline 1rem padding where there is no inset, so these are drop-in
+   replacements for p-4 on the mobile breakpoint. */
+@layer utilities {
+  .px-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+  .py-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }

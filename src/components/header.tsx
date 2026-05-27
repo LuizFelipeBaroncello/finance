@@ -43,7 +43,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
   const router = useRouter();
 
   return (
-    <header className="flex h-14 items-center gap-3 border-b border-border bg-background px-4 lg:px-6 sticky top-0 z-10">
+    <header className="flex h-14 items-center gap-3 border-b border-border bg-background px-safe lg:px-6 sticky top-0 z-10">
       {/* Mobile menu trigger */}
       <Button
         variant="ghost"

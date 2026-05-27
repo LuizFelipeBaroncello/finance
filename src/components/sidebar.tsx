@@ -139,7 +139,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden lg:flex lg:w-60 lg:shrink-0 lg:flex-col border-r border-border bg-sidebar h-screen sticky top-0">
+    <aside className="hidden lg:flex lg:w-60 lg:shrink-0 lg:flex-col border-r border-border bg-sidebar h-dvh sticky top-0">
       <div className="flex h-14 items-center gap-2 border-b border-border px-5">
         <span className="font-semibold text-foreground tracking-tight">
           Feed Level
