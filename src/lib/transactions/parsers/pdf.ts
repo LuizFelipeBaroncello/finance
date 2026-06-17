@@ -1,13 +1,10 @@
-import { createRequire } from "node:module";
-import { getDocument, GlobalWorkerOptions } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
 
-if (!GlobalWorkerOptions.workerSrc) {
-  const require = createRequire(import.meta.url);
-  GlobalWorkerOptions.workerSrc = require.resolve(
-    "pdfjs-dist/legacy/build/pdf.worker.mjs",
-  );
-}
+// Server-side (Node) usage: the legacy build runs the parser on the main thread
+// via a "fake worker", so no `workerSrc` is needed. Pointing `workerSrc` at the
+// ESM `pdf.worker.mjs` breaks because `pdfjs-dist` is a server external package
+// and `require()` cannot load an ES module.
 
 const Y_TOLERANCE = 3;
 

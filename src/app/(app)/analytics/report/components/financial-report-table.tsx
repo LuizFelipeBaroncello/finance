@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
+import { ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -89,14 +90,32 @@ function ReportLink({
   )
 }
 
+type SortDir = "desc" | "asc"
+type PctBase = "month" | "column" | "section"
+
+const pctFmt = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+})
+
 export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
   const fmt = useFormatBRL()
   const [hidden, setHidden] = useState<Set<string>>(new Set())
+  const [sortDir, setSortDir] = useState<SortDir>("desc")
+  const [pctBase, setPctBase] = useState<PctBase>("month")
 
   const meses = useMemo(() => {
     const set = new Set(rows.map((r) => r.Mês))
     return Array.from(set).sort((a, b) => parseMes(a) - parseMes(b))
   }, [rows])
+
+  const mesAtual = useMemo(() => {
+    if (meses.length === 0) return ""
+    const now = new Date()
+    const code = now.getFullYear() * 12 + now.getMonth()
+    const match = meses.find((m) => parseMes(m) === code)
+    return match ?? meses[meses.length - 1]
+  }, [meses])
 
   const categorias = useMemo(() => {
     const grouped: Record<string, { tipo: "Credit" | "Debit"; porMes: Record<string, number> }> = {}
@@ -116,19 +135,27 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
     })
   }
 
+  const sortByMesAtual = useMemo(() => {
+    const val = (v: { porMes: Record<string, number> }) => Math.abs(v.porMes[mesAtual] ?? 0)
+    return (
+      [, a]: [string, { porMes: Record<string, number> }],
+      [, b]: [string, { porMes: Record<string, number> }]
+    ) => (sortDir === "desc" ? val(b) - val(a) : val(a) - val(b))
+  }, [mesAtual, sortDir])
+
   const receitasCats = useMemo(
     () =>
       Object.entries(categorias)
         .filter(([, v]) => v.tipo === "Credit")
-        .sort(([a], [b]) => a.localeCompare(b, "pt-BR")),
-    [categorias]
+        .sort(sortByMesAtual),
+    [categorias, sortByMesAtual]
   )
   const despesasCats = useMemo(
     () =>
       Object.entries(categorias)
         .filter(([, v]) => v.tipo === "Debit")
-        .sort(([a], [b]) => a.localeCompare(b, "pt-BR")),
-    [categorias]
+        .sort(sortByMesAtual),
+    [categorias, sortByMesAtual]
   )
 
   const totaisPorMes = useMemo(() => {
@@ -156,6 +183,23 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
   const totalReceitas = meses.reduce((a, m) => a + totaisPorMes[m].receitas, 0)
   const totalDespesas = meses.reduce((a, m) => a + totaisPorMes[m].despesas, 0)
   const totalSaldo = totalReceitas - totalDespesas
+
+  const pct = (value: number, tipo: "Credit" | "Debit", mes: string): string | null => {
+    let base: number
+    if (pctBase === "month") {
+      base = mesAtual
+        ? tipo === "Credit"
+          ? totaisPorMes[mesAtual].receitas
+          : totaisPorMes[mesAtual].despesas
+        : 0
+    } else if (pctBase === "column") {
+      base = tipo === "Credit" ? totaisPorMes[mes].receitas : totaisPorMes[mes].despesas
+    } else {
+      base = tipo === "Credit" ? totalReceitas : totalDespesas
+    }
+    if (!base) return null
+    return `${pctFmt.format((Math.abs(value) / base) * 100)}%`
+  }
 
   const periodRange = useMemo<DateRange | null>(() => {
     if (meses.length === 0) return null
@@ -186,7 +230,11 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
     )
   }
 
-  const renderCategoriaRow = (cat: string, porMes: Record<string, number>) => {
+  const renderCategoriaRow = (
+    cat: string,
+    tipo: "Credit" | "Debit",
+    porMes: Record<string, number>
+  ) => {
     const isHidden = hidden.has(cat)
     const total = totalCategoria(cat)
     return (
@@ -196,17 +244,24 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
         className={cn("cursor-pointer", isHidden && "opacity-40")}
       >
         <TableCell className="font-medium">{cat}</TableCell>
-        {meses.map((mes) => (
-          <TableCell key={mes} className="text-right tabular-nums">
-            {porMes[mes] ? (
-              <ReportLink href={txHref(mesToRange(mes), [cat])}>
-                {fmt(Math.abs(porMes[mes]))}
-              </ReportLink>
-            ) : (
-              "—"
-            )}
-          </TableCell>
-        ))}
+        {meses.map((mes) => {
+          const valor = porMes[mes]
+          const percent = valor && !isHidden ? pct(valor, tipo, mes) : null
+          return (
+            <TableCell key={mes} className="text-right tabular-nums">
+              {valor ? (
+                <ReportLink href={txHref(mesToRange(mes), [cat])}>
+                  {fmt(Math.abs(valor))}
+                </ReportLink>
+              ) : (
+                "—"
+              )}
+              {percent && (
+                <span className="block text-xs text-muted-foreground">{percent}</span>
+              )}
+            </TableCell>
+          )
+        })}
         <TableCell className="text-right tabular-nums font-medium">
           {isHidden ? (
             fmt(total)
@@ -218,9 +273,50 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
     )
   }
 
+  const pctOptions: { label: string; value: PctBase }[] = [
+    { label: "Mês atual", value: "month" },
+    { label: "Coluna", value: "column" },
+    { label: "Seção", value: "section" },
+  ]
+
   return (
-    <Card className="overflow-hidden p-0">
-      <Table>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Ordenamento por valor */}
+        <button
+          onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {sortDir === "desc" ? (
+            <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowUpNarrowWide className="h-3.5 w-3.5" />
+          )}
+          {sortDir === "desc" ? "Maior valor" : "Menor valor"}
+        </button>
+
+        {/* Base da porcentagem */}
+        <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+          <span className="px-1.5 text-xs text-muted-foreground">%</span>
+          {pctOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setPctBase(opt.value)}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                pctBase === opt.value
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Card className="overflow-hidden p-0">
+        <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="min-w-[12rem]">Categoria</TableHead>
@@ -253,7 +349,7 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
               </ReportLink>
             </TableCell>
           </TableRow>
-          {receitasCats.map(([cat, v]) => renderCategoriaRow(cat, v.porMes))}
+          {receitasCats.map(([cat, v]) => renderCategoriaRow(cat, v.tipo, v.porMes))}
 
           <TableRow className="bg-rose-500/10 hover:bg-rose-500/15">
             <TableCell className="font-semibold text-rose-600 dark:text-rose-400">
@@ -275,7 +371,7 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
               </ReportLink>
             </TableCell>
           </TableRow>
-          {despesasCats.map(([cat, v]) => renderCategoriaRow(cat, v.porMes))}
+          {despesasCats.map(([cat, v]) => renderCategoriaRow(cat, v.tipo, v.porMes))}
 
           <TableRow className="bg-muted/50 border-t-2">
             <TableCell className="font-semibold">Saldo final</TableCell>
@@ -307,7 +403,8 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
             </TableCell>
           </TableRow>
         </TableBody>
-      </Table>
-    </Card>
+        </Table>
+      </Card>
+    </div>
   )
 }
