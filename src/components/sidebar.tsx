@@ -17,6 +17,7 @@ import {
   Tag,
   BarChart2,
   FileBarChart,
+  GitCompareArrows,
   Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ const NAV: NavItem[] = [
     children: [
       { label: "Visão Geral", href: "/analytics", icon: BarChart2 },
       { label: "Relatório", href: "/analytics/report", icon: FileBarChart },
+      { label: "Comparar", href: "/analytics/compare", icon: GitCompareArrows },
     ],
   },
   { label: "Metas", href: "/goals", icon: Target },

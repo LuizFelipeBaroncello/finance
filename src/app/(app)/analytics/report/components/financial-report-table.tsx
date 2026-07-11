@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react"
+import { ArrowDownWideNarrow, ArrowUpDown, ArrowUpNarrowWide } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -91,7 +91,12 @@ function ReportLink({
 }
 
 type SortDir = "desc" | "asc"
-type PctBase = "month" | "column" | "section"
+// chave de ordenação: um mês específico, ou a coluna "total"
+type SortKey = string | "__total__"
+// base do % de despesas: sobre o total de despesas ou de receitas da coluna
+type DespBase = "despesas" | "receitas"
+
+const TOTAL_KEY = "__total__"
 
 const pctFmt = new Intl.NumberFormat("pt-BR", {
   minimumFractionDigits: 1,
@@ -101,21 +106,14 @@ const pctFmt = new Intl.NumberFormat("pt-BR", {
 export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
   const fmt = useFormatBRL()
   const [hidden, setHidden] = useState<Set<string>>(new Set())
+  const [sortKey, setSortKey] = useState<SortKey | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>("desc")
-  const [pctBase, setPctBase] = useState<PctBase>("month")
+  const [despBase, setDespBase] = useState<DespBase>("despesas")
 
   const meses = useMemo(() => {
     const set = new Set(rows.map((r) => r.Mês))
     return Array.from(set).sort((a, b) => parseMes(a) - parseMes(b))
   }, [rows])
-
-  const mesAtual = useMemo(() => {
-    if (meses.length === 0) return ""
-    const now = new Date()
-    const code = now.getFullYear() * 12 + now.getMonth()
-    const match = meses.find((m) => parseMes(m) === code)
-    return match ?? meses[meses.length - 1]
-  }, [meses])
 
   const categorias = useMemo(() => {
     const grouped: Record<string, { tipo: "Credit" | "Debit"; porMes: Record<string, number> }> = {}
@@ -135,27 +133,46 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
     })
   }
 
-  const sortByMesAtual = useMemo(() => {
-    const val = (v: { porMes: Record<string, number> }) => Math.abs(v.porMes[mesAtual] ?? 0)
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"))
+    } else {
+      setSortKey(key)
+      setSortDir("desc")
+    }
+  }
+
+  const compareCats = useMemo(() => {
+    const valor = (v: { porMes: Record<string, number> }) => {
+      if (sortKey === null) return 0
+      if (sortKey === TOTAL_KEY) {
+        return Object.values(v.porMes).reduce((acc, n) => acc + Math.abs(n ?? 0), 0)
+      }
+      return Math.abs(v.porMes[sortKey] ?? 0)
+    }
     return (
-      [, a]: [string, { porMes: Record<string, number> }],
-      [, b]: [string, { porMes: Record<string, number> }]
-    ) => (sortDir === "desc" ? val(b) - val(a) : val(a) - val(b))
-  }, [mesAtual, sortDir])
+      [a, va]: [string, { porMes: Record<string, number> }],
+      [b, vb]: [string, { porMes: Record<string, number> }]
+    ) => {
+      if (sortKey === null) return a.localeCompare(b, "pt-BR")
+      const diff = sortDir === "desc" ? valor(vb) - valor(va) : valor(va) - valor(vb)
+      return diff !== 0 ? diff : a.localeCompare(b, "pt-BR")
+    }
+  }, [sortKey, sortDir])
 
   const receitasCats = useMemo(
     () =>
       Object.entries(categorias)
         .filter(([, v]) => v.tipo === "Credit")
-        .sort(sortByMesAtual),
-    [categorias, sortByMesAtual]
+        .sort(compareCats),
+    [categorias, compareCats]
   )
   const despesasCats = useMemo(
     () =>
       Object.entries(categorias)
         .filter(([, v]) => v.tipo === "Debit")
-        .sort(sortByMesAtual),
-    [categorias, sortByMesAtual]
+        .sort(compareCats),
+    [categorias, compareCats]
   )
 
   const totaisPorMes = useMemo(() => {
@@ -185,18 +202,17 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
   const totalSaldo = totalReceitas - totalDespesas
 
   const pct = (value: number, tipo: "Credit" | "Debit", mes: string): string | null => {
-    let base: number
-    if (pctBase === "month") {
-      base = mesAtual
-        ? tipo === "Credit"
-          ? totaisPorMes[mesAtual].receitas
-          : totaisPorMes[mesAtual].despesas
-        : 0
-    } else if (pctBase === "column") {
-      base = tipo === "Credit" ? totaisPorMes[mes].receitas : totaisPorMes[mes].despesas
-    } else {
-      base = tipo === "Credit" ? totalReceitas : totalDespesas
-    }
+    // sempre relativo à coluna (mês) presente
+    const col = totaisPorMes[mes]
+    if (!col) return null
+    // receita: % sobre receitas da coluna
+    // despesa: % sobre despesas OU receitas da coluna (toggle)
+    const base =
+      tipo === "Credit"
+        ? col.receitas
+        : despBase === "receitas"
+          ? col.receitas
+          : col.despesas
     if (!base) return null
     return `${pctFmt.format((Math.abs(value) / base) * 100)}%`
   }
@@ -273,38 +289,48 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
     )
   }
 
-  const pctOptions: { label: string; value: PctBase }[] = [
-    { label: "Mês atual", value: "month" },
-    { label: "Coluna", value: "column" },
-    { label: "Seção", value: "section" },
+  const despOptions: { label: string; value: DespBase }[] = [
+    { label: "Despesas", value: "despesas" },
+    { label: "Receitas", value: "receitas" },
   ]
+
+  const renderSortHeader = (key: SortKey, label: string) => {
+    const active = sortKey === key
+    return (
+      <button
+        onClick={() => handleSort(key)}
+        className={cn(
+          "ml-auto flex items-center gap-1 transition-colors hover:text-foreground",
+          active ? "text-foreground" : "text-muted-foreground"
+        )}
+      >
+        {label}
+        {active ? (
+          sortDir === "desc" ? (
+            <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowUpNarrowWide className="h-3.5 w-3.5" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+        )}
+      </button>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        {/* Ordenamento por valor */}
-        <button
-          onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-          className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {sortDir === "desc" ? (
-            <ArrowDownWideNarrow className="h-3.5 w-3.5" />
-          ) : (
-            <ArrowUpNarrowWide className="h-3.5 w-3.5" />
-          )}
-          {sortDir === "desc" ? "Maior valor" : "Menor valor"}
-        </button>
-
-        {/* Base da porcentagem */}
+        {/* Base do % de despesas */}
         <div className="flex items-center gap-1 rounded-lg border border-border p-1">
-          <span className="px-1.5 text-xs text-muted-foreground">%</span>
-          {pctOptions.map((opt) => (
+          <span className="px-1.5 text-xs text-muted-foreground">% despesas sobre</span>
+          {despOptions.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setPctBase(opt.value)}
+              onClick={() => setDespBase(opt.value)}
               className={cn(
                 "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-                pctBase === opt.value
+                despBase === opt.value
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
@@ -322,10 +348,10 @@ export function FinancialReportTable({ rows }: { rows: ReportRow[] }) {
             <TableHead className="min-w-[12rem]">Categoria</TableHead>
             {meses.map((mes) => (
               <TableHead key={mes} className="text-right">
-                {mes}
+                {renderSortHeader(mes, mes)}
               </TableHead>
             ))}
-            <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right">{renderSortHeader(TOTAL_KEY, "Total")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

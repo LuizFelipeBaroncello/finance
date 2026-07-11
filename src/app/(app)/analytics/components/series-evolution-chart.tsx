@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import {
   LineChart,
   Line,
@@ -9,11 +9,12 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceArea,
   ResponsiveContainer,
 } from "recharts"
 import { formatBRL as formatBRLBase, MASK, useCurrencyVisibility } from "@/lib/currency"
 
-const PALETTE = [
+export const PALETTE = [
   "#3b82f6",
   "#22c55e",
   "#ef4444",
@@ -29,9 +30,14 @@ const PALETTE = [
 interface SeriesEvolutionChartProps {
   data: Record<string, string | number>[]
   seriesKeys: string[]
+  onRangeSelect?: (fromIndex: number, toIndex: number) => void
 }
 
-export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartProps) {
+export function SeriesEvolutionChart({
+  data,
+  seriesKeys,
+  onRangeSelect,
+}: SeriesEvolutionChartProps) {
   const { hidden: valuesHidden } = useCurrencyVisibility()
   const formatBRL = (value: number) =>
     valuesHidden ? MASK : formatBRLBase(value)
@@ -42,6 +48,14 @@ export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartP
   }
 
   const [hidden, setHidden] = useState<Set<string>>(new Set())
+  // Refs rastreiam o arrasto de forma síncrona (eventos podem chegar no mesmo
+  // frame, antes de qualquer re-render); o estado só desenha a ReferenceArea.
+  // armedRef cobre o mousedown que chega antes de o recharts ter um índice
+  // ativo (mouse ainda não tinha se movido sobre o gráfico).
+  const armedRef = useRef(false)
+  const selStartRef = useRef<number | null>(null)
+  const selEndRef = useRef<number | null>(null)
+  const [sel, setSel] = useState<{ start: number; end: number } | null>(null)
 
   const handleLegendClick = useCallback((dataKey: string) => {
     setHidden((prev) => {
@@ -52,6 +66,37 @@ export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartP
     })
   }, [])
 
+  // Mapeia a posição do mouse para o índice do bucket usando a geometria real
+  // do plot (linhas do grid), em vez do activeTooltipIndex do recharts — o
+  // estado interno do tooltip pode ficar defasado/fixado durante o arrasto.
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const indexFromClientX = (clientX: number): number | null => {
+    const root = containerRef.current
+    if (!root || data.length < 2) return null
+    const grid = root.querySelector<SVGLineElement>(
+      ".recharts-cartesian-grid-horizontal line"
+    )
+    // ownerSVGElement garante o svg do plot (a legenda também usa
+    // svg.recharts-surface nos ícones, e vem antes no DOM)
+    const svg = grid?.ownerSVGElement
+    if (!grid || !svg) return null
+    const x1 = parseFloat(grid.getAttribute("x1") ?? "")
+    const x2 = parseFloat(grid.getAttribute("x2") ?? "")
+    if (!Number.isFinite(x1) || !Number.isFinite(x2) || x2 <= x1) return null
+    const rect = svg.getBoundingClientRect()
+    const idx = Math.round(
+      ((clientX - rect.left - x1) / (x2 - x1)) * (data.length - 1)
+    )
+    return Math.max(0, Math.min(data.length - 1, idx))
+  }
+
+  const clearSelection = () => {
+    armedRef.current = false
+    selStartRef.current = null
+    selEndRef.current = null
+    setSel(null)
+  }
+
   if (data.length === 0 || seriesKeys.length === 0) {
     return (
       <div className="flex h-[300px] items-center justify-center text-muted-foreground text-sm">
@@ -60,9 +105,51 @@ export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartP
     )
   }
 
+  const selMin = sel && sel.start !== sel.end ? Math.min(sel.start, sel.end) : null
+  const selMax = sel && sel.start !== sel.end ? Math.max(sel.start, sel.end) : null
+
+  const handleMouseDown = (e: { clientX: number }) => {
+    armedRef.current = true
+    const i = indexFromClientX(e.clientX)
+    if (i === null) return
+    selStartRef.current = i
+    selEndRef.current = i
+    setSel({ start: i, end: i })
+  }
+
+  const handleMouseMove = (e: { clientX: number }) => {
+    if (!armedRef.current) return
+    const i = indexFromClientX(e.clientX)
+    if (i === null) return
+    if (selStartRef.current === null) selStartRef.current = i
+    selEndRef.current = i
+    setSel({ start: selStartRef.current, end: i })
+  }
+
+  const handleMouseUp = () => {
+    const start = selStartRef.current
+    const end = selEndRef.current
+    if (start !== null && end !== null && start !== end) {
+      onRangeSelect?.(Math.min(start, end), Math.max(start, end))
+    }
+    clearSelection()
+  }
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+    <div
+      ref={containerRef}
+      onMouseDown={onRangeSelect ? handleMouseDown : undefined}
+      onMouseMove={onRangeSelect ? handleMouseMove : undefined}
+      onMouseUp={onRangeSelect ? handleMouseUp : undefined}
+      onMouseLeave={onRangeSelect ? clearSelection : undefined}
+      style={onRangeSelect ? { userSelect: "none", cursor: "crosshair" } : undefined}
+    >
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart
+          data={data}
+          margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+          accessibilityLayer={!onRangeSelect}
+        >
         <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
         <XAxis
           dataKey="label"
@@ -100,6 +187,16 @@ export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartP
             </span>
           )}
         />
+        {selMin !== null && selMax !== null && (
+          <ReferenceArea
+            x1={data[selMin].label as string}
+            x2={data[selMax].label as string}
+            fill="#3b82f6"
+            fillOpacity={0.12}
+            stroke="#3b82f6"
+            strokeOpacity={0.35}
+          />
+        )}
         {seriesKeys.map((key, i) => (
           <Line
             key={key}
@@ -112,7 +209,8 @@ export function SeriesEvolutionChart({ data, seriesKeys }: SeriesEvolutionChartP
             hide={hidden.has(key)}
           />
         ))}
-      </LineChart>
-    </ResponsiveContainer>
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
