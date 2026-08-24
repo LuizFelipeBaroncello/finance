@@ -16,6 +16,33 @@ export type FlowTransaction = {
   re_category_transaction: Array<{ category_id: number }>
 }
 
+export type FlowEntry = {
+  name: string
+  value: number
+  /** Chave estável usada pelo seletor de categorias. */
+  key: string
+  color: string
+}
+
+export type FlowMacro = {
+  name: string
+  value: number
+  color: string
+  categories: FlowEntry[]
+}
+
+/**
+ * Totais do período já agregados no servidor. É a partir daqui que o cliente
+ * remonta o gráfico a cada mudança na seleção de categorias — bem mais leve do
+ * que mandar todas as transações para o navegador.
+ */
+export type FlowTotals = {
+  income: FlowEntry[]
+  macros: FlowMacro[]
+  /** Despesas sem macro categoria. */
+  orphans: FlowEntry[]
+}
+
 export type FlowNodeKind =
   | "income"
   | "hub"

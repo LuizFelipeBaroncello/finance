@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Money } from "@/lib/currency"
 import { PeriodFilter } from "../components/period-filter"
-import { SankeyFlowChart } from "./components/sankey-flow-chart"
-import { buildFlowData } from "./lib/flow-aggregations"
+import { FlowDashboard } from "./components/flow-dashboard"
+import { aggregateFlowTotals } from "./lib/flow-aggregations"
 import type { FlowCategory, FlowTransaction } from "./types"
 
 const TRANSACTION_SELECT =
@@ -94,7 +92,7 @@ export default async function AnalyticsFlowPage({
   ])
 
   const error = categories.error ?? txs.error
-  const flow = buildFlowData(txs.transactions, categories.byId)
+  const totals = aggregateFlowTotals(txs.transactions, categories.byId)
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -103,7 +101,8 @@ export default async function AnalyticsFlowPage({
           <h1 className="text-2xl font-semibold tracking-tight">Fluxo</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Para onde vai o dinheiro: receitas → macro categorias → categorias.
-            Transferências entre contas próprias são ignoradas.
+            Desmarque uma categoria na lista abaixo do gráfico para tirá-la da
+            conta.
           </p>
         </div>
         <PeriodFilter
@@ -119,78 +118,8 @@ export default async function AnalyticsFlowPage({
           Não foi possível carregar os dados: {error}
         </p>
       ) : (
-        <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Receitas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Money
-                  value={flow.totalReceitas}
-                  className="text-xl font-semibold text-green-500"
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Despesas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Money
-                  value={flow.totalDespesas}
-                  className="text-xl font-semibold text-red-500"
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {flow.sobra >= 0 ? "Sobra" : "Déficit"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Money
-                  value={Math.abs(flow.sobra)}
-                  className={`text-xl font-semibold ${
-                    flow.sobra >= 0 ? "text-green-500" : "text-red-500"
-                  }`}
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Taxa de poupança
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p
-                  className={`text-xl font-semibold ${
-                    flow.sobra >= 0 ? "text-green-500" : "text-red-500"
-                  }`}
-                >
-                  {flow.totalReceitas > 0
-                    ? `${((flow.sobra / flow.totalReceitas) * 100).toFixed(1)}%`
-                    : "—"}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Fluxo do Período</CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <SankeyFlowChart data={flow} />
-            </CardContent>
-          </Card>
-        </>
+        // A chave força um estado de seleção novo sempre que o período muda.
+        <FlowDashboard key={`${startDate}:${endDate}`} totals={totals} />
       )}
     </div>
   )
