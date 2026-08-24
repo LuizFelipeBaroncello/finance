@@ -18,6 +18,7 @@ import {
   BarChart2,
   FileBarChart,
   GitCompareArrows,
+  Waypoints,
   Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ const NAV: NavItem[] = [
       { label: "Visão Geral", href: "/analytics", icon: BarChart2 },
       { label: "Relatório", href: "/analytics/report", icon: FileBarChart },
       { label: "Comparar", href: "/analytics/compare", icon: GitCompareArrows },
+      { label: "Fluxo", href: "/analytics/flow", icon: Waypoints },
     ],
   },
   { label: "Metas", href: "/goals", icon: Target },
