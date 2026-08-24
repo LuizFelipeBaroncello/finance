@@ -1,8 +1,11 @@
 import type {
   FlowCategory,
   FlowData,
+  FlowEntry,
   FlowLink,
+  FlowMacro,
   FlowNode,
+  FlowTotals,
   FlowTransaction,
 } from "../types"
 
@@ -31,13 +34,17 @@ export const HUB_COLOR = "#3b82f6"
 export const LEFTOVER_COLOR = "#22c55e"
 export const DEFICIT_COLOR = "#ef4444"
 
+/** Transferências não são gasto/receita de verdade: cor neutra para destacá-las. */
+export const TRANSFER_MACRO = "Transferências"
+const TRANSFER_COLOR = "#94a3b8"
+
 const UNKNOWN_CATEGORY: FlowCategory = {
   category_name: "Sem categoria",
   macro_name: null,
   macro_order: null,
 }
 
-/** Categorias que representam movimentação entre contas próprias, não gasto real. */
+/** Categorias que representam movimentação entre contas próprias. */
 const TRANSFER_CATEGORIES = new Set([
   "transferencia enviada",
   "transferencia recebida",
@@ -51,7 +58,23 @@ function normalize(value: string) {
     .trim()
 }
 
+function isTransfer(categoryName: string) {
+  return TRANSFER_CATEGORIES.has(normalize(categoryName))
+}
+
 const FALLBACK_ORDER = Number.MAX_SAFE_INTEGER
+/** As transferências ficam sempre depois das macros de verdade. */
+const TRANSFER_ORDER = FALLBACK_ORDER - 1
+
+/** Chave de seleção de uma fonte de receita. */
+export function incomeKey(name: string) {
+  return `r:${name}`
+}
+
+/** Chave de seleção de uma categoria de despesa. */
+export function expenseKey(name: string) {
+  return `d:${name}`
+}
 
 type MacroBucket = {
   name: string
@@ -65,71 +88,156 @@ function addTo(map: Map<string, number>, key: string, amount: number) {
 }
 
 /**
- * Monta o fluxo Receitas → Renda Total → Macro categorias → Categorias.
+ * Agrega as transações do período em totais por fonte de receita e por
+ * macro/categoria de despesa.
  *
  * Regras:
- * - transações do tipo `transfer` e as categorias de transferência são ignoradas;
  * - uma transação com N categorias tem o valor rateado igualmente entre elas,
  *   para que a soma dos ramos continue batendo com o total;
- * - despesa sem macro categoria vira um ramo próprio, ligado direto à Renda Total;
- * - quando sobra dinheiro, o excedente vira o nó "Sobra"; quando falta, um nó
- *   "Déficit" alimenta a Renda Total, mantendo entrada e saída equilibradas.
+ * - transferências entram no gráfico, mas as enviadas ficam sob uma macro
+ *   própria ("Transferências") e ambas usam uma cor neutra, já que são
+ *   movimentação entre contas e não gasto ou renda de verdade;
+ * - despesa sem macro categoria vira um ramo próprio (`orphans`).
  */
-export function buildFlowData(
+export function aggregateFlowTotals(
   transactions: FlowTransaction[],
   categories: Map<number, FlowCategory>
-): FlowData {
+): FlowTotals {
   const income = new Map<string, number>()
   const macros = new Map<string, MacroBucket>()
   const orphanExpenses = new Map<string, number>()
 
   for (const t of transactions) {
-    if (t.type === "transfer") continue
-
     const rows = t.re_category_transaction ?? []
     const cats: FlowCategory[] =
       rows.length === 0
         ? [UNKNOWN_CATEGORY]
         : rows.map((rc) => categories.get(rc.category_id) ?? UNKNOWN_CATEGORY)
 
-    const kept = cats.filter(
-      (c) => !TRANSFER_CATEGORIES.has(normalize(c.category_name))
-    )
-    if (kept.length === 0) continue
-
-    const share = Math.abs(Number(t.amount)) / kept.length
+    const amount = Number(t.amount)
+    const share = Math.abs(amount) / cats.length
     if (!Number.isFinite(share) || share <= 0) continue
 
-    for (const c of kept) {
-      if (t.type === "credit") {
+    // Transações marcadas como `transfer` não têm débito/crédito próprio;
+    // o sinal do valor diz a direção.
+    const isIncome = t.type === "transfer" ? amount >= 0 : t.type === "credit"
+
+    for (const c of cats) {
+      if (isIncome) {
         addTo(income, c.category_name, share)
         continue
       }
 
-      if (!c.macro_name) {
+      const macroName = isTransfer(c.category_name)
+        ? TRANSFER_MACRO
+        : c.macro_name
+      if (!macroName) {
         addTo(orphanExpenses, c.category_name, share)
         continue
       }
 
-      let bucket = macros.get(c.macro_name)
+      let bucket = macros.get(macroName)
       if (!bucket) {
         bucket = {
-          name: c.macro_name,
-          order: c.macro_order ?? FALLBACK_ORDER,
+          name: macroName,
+          order:
+            macroName === TRANSFER_MACRO
+              ? TRANSFER_ORDER
+              : c.macro_order ?? FALLBACK_ORDER,
           total: 0,
           categories: new Map(),
         }
-        macros.set(c.macro_name, bucket)
+        macros.set(macroName, bucket)
       }
       bucket.total += share
       addTo(bucket.categories, c.category_name, share)
     }
   }
 
-  const totalReceitas = [...income.values()].reduce((s, v) => s + v, 0)
+  const sortedMacros = [...macros.values()].sort(
+    (a, b) => a.order - b.order || b.total - a.total
+  )
+
+  const incomeEntries: FlowEntry[] = [...income.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value], i) => ({
+      name,
+      value,
+      key: incomeKey(name),
+      color: isTransfer(name)
+        ? TRANSFER_COLOR
+        : INCOME_PALETTE[i % INCOME_PALETTE.length],
+    }))
+
+  const macroEntries: FlowMacro[] = sortedMacros.map((bucket, i) => {
+    const color =
+      bucket.name === TRANSFER_MACRO
+        ? TRANSFER_COLOR
+        : MACRO_PALETTE[i % MACRO_PALETTE.length]
+    return {
+      name: bucket.name,
+      value: bucket.total,
+      color,
+      categories: [...bucket.categories.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, value]) => ({
+          name,
+          value,
+          key: expenseKey(name),
+          color,
+        })),
+    }
+  })
+
+  const orphanEntries: FlowEntry[] = [...orphanExpenses.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value], i) => ({
+      name,
+      value,
+      key: expenseKey(name),
+      color: MACRO_PALETTE[(sortedMacros.length + i) % MACRO_PALETTE.length],
+    }))
+
+  return { income: incomeEntries, macros: macroEntries, orphans: orphanEntries }
+}
+
+/** Todas as chaves de seleção do período — é o estado inicial do seletor. */
+export function allFlowKeys(totals: FlowTotals): Set<string> {
+  const keys = new Set<string>()
+  for (const entry of totals.income) keys.add(entry.key)
+  for (const macro of totals.macros) {
+    for (const entry of macro.categories) keys.add(entry.key)
+  }
+  for (const entry of totals.orphans) keys.add(entry.key)
+  return keys
+}
+
+/**
+ * Monta o fluxo Receitas → Renda Total → Macro categorias → Categorias a partir
+ * dos totais, considerando apenas as categorias selecionadas.
+ *
+ * Quando sobra dinheiro, o excedente vira o nó "Sobra"; quando falta, um nó
+ * "Déficit" alimenta a Renda Total, mantendo entrada e saída equilibradas.
+ */
+export function buildFlowData(
+  totals: FlowTotals,
+  selected: Set<string>
+): FlowData {
+  const income = totals.income.filter((e) => selected.has(e.key))
+  const macros = totals.macros
+    .map((macro) => ({
+      ...macro,
+      categories: macro.categories.filter((e) => selected.has(e.key)),
+    }))
+    .filter((macro) => macro.categories.length > 0)
+  const orphans = totals.orphans.filter((e) => selected.has(e.key))
+
+  const sum = (entries: FlowEntry[]) =>
+    entries.reduce((s, e) => s + e.value, 0)
+
+  const totalReceitas = sum(income)
   const totalDespesas =
-    [...macros.values()].reduce((s, b) => s + b.total, 0) +
-    [...orphanExpenses.values()].reduce((s, v) => s + v, 0)
+    macros.reduce((s, m) => s + sum(m.categories), 0) + sum(orphans)
   const sobra = totalReceitas - totalDespesas
 
   const nodes: FlowNode[] = []
@@ -139,18 +247,12 @@ export function buildFlowData(
     return nodes.length - 1
   }
 
-  const sortedIncome = [...income.entries()].sort((a, b) => b[1] - a[1])
-  const sortedMacros = [...macros.values()].sort(
-    (a, b) => a.order - b.order || b.total - a.total
-  )
-  const sortedOrphans = [...orphanExpenses.entries()].sort((a, b) => b[1] - a[1])
-
   // Coluna 0: fontes de receita (+ déficit, quando as despesas superam a renda).
-  const incomeIndexes = sortedIncome.map(([name, value], i) =>
+  const incomeIndexes = income.map((entry) =>
     push({
-      name,
-      value,
-      color: INCOME_PALETTE[i % INCOME_PALETTE.length],
+      name: entry.name,
+      value: entry.value,
+      color: entry.color,
       kind: "income",
     })
   )
@@ -172,12 +274,12 @@ export function buildFlowData(
     kind: "hub",
   })
 
-  sortedIncome.forEach(([, value], i) => {
+  income.forEach((entry, i) => {
     links.push({
       source: incomeIndexes[i],
       target: hubIndex,
-      value,
-      color: nodes[incomeIndexes[i]].color,
+      value: entry.value,
+      color: entry.color,
     })
   })
   if (deficitIndex !== null) {
@@ -190,42 +292,55 @@ export function buildFlowData(
   }
 
   // Coluna 2: macro categorias.
-  const macroIndexes = sortedMacros.map((bucket, i) => {
+  const macroIndexes = macros.map((macro) => {
+    const value = sum(macro.categories)
     const index = push({
-      name: bucket.name,
-      value: bucket.total,
-      color: MACRO_PALETTE[i % MACRO_PALETTE.length],
+      name: macro.name,
+      value,
+      color: macro.color,
       kind: "macro",
     })
-    links.push({
-      source: hubIndex,
-      target: index,
-      value: bucket.total,
-      color: nodes[index].color,
-    })
+    links.push({ source: hubIndex, target: index, value, color: macro.color })
     return index
   })
 
   // Coluna 3: categorias de cada macro, mantidas agrupadas por macro.
   let leafCount = 0
-  sortedMacros.forEach((bucket, i) => {
+  macros.forEach((macro, i) => {
     const macroIndex = macroIndexes[i]
-    const color = nodes[macroIndex].color
-    const sorted = [...bucket.categories.entries()].sort((a, b) => b[1] - a[1])
-    for (const [name, value] of sorted) {
-      const index = push({ name, value, color, kind: "category" })
-      links.push({ source: macroIndex, target: index, value, color })
+    for (const entry of macro.categories) {
+      const index = push({
+        name: entry.name,
+        value: entry.value,
+        color: entry.color,
+        kind: "category",
+      })
+      links.push({
+        source: macroIndex,
+        target: index,
+        value: entry.value,
+        color: entry.color,
+      })
       leafCount += 1
     }
   })
 
   // Despesas sem macro viram folhas ligadas direto à Renda Total.
-  sortedOrphans.forEach(([name, value], i) => {
-    const color = MACRO_PALETTE[(sortedMacros.length + i) % MACRO_PALETTE.length]
-    const index = push({ name, value, color, kind: "category" })
-    links.push({ source: hubIndex, target: index, value, color })
+  for (const entry of orphans) {
+    const index = push({
+      name: entry.name,
+      value: entry.value,
+      color: entry.color,
+      kind: "category",
+    })
+    links.push({
+      source: hubIndex,
+      target: index,
+      value: entry.value,
+      color: entry.color,
+    })
     leafCount += 1
-  })
+  }
 
   if (sobra > 0) {
     const index = push({
@@ -243,12 +358,5 @@ export function buildFlowData(
     leafCount += 1
   }
 
-  return {
-    nodes,
-    links,
-    totalReceitas,
-    totalDespesas,
-    sobra,
-    leafCount,
-  }
+  return { nodes, links, totalReceitas, totalDespesas, sobra, leafCount }
 }
