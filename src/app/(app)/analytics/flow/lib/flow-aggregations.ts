@@ -216,12 +216,16 @@ export function allFlowKeys(totals: FlowTotals): Set<string> {
  * Monta o fluxo Receitas → Renda Total → Macro categorias → Categorias a partir
  * dos totais, considerando apenas as categorias selecionadas.
  *
+ * Com `showMacros` desligado a coluna das macros some e as categorias saem
+ * direto da Renda Total, mantendo a cor e a ordem do macro a que pertencem.
+ *
  * Quando sobra dinheiro, o excedente vira o nó "Sobra"; quando falta, um nó
  * "Déficit" alimenta a Renda Total, mantendo entrada e saída equilibradas.
  */
 export function buildFlowData(
   totals: FlowTotals,
-  selected: Set<string>
+  selected: Set<string>,
+  showMacros = true
 ): FlowData {
   const income = totals.income.filter((e) => selected.has(e.key))
   const macros = totals.macros
@@ -291,8 +295,9 @@ export function buildFlowData(
     })
   }
 
-  // Coluna 2: macro categorias.
+  // Coluna 2: macro categorias (puladas quando o usuário esconde as macros).
   const macroIndexes = macros.map((macro) => {
+    if (!showMacros) return hubIndex
     const value = sum(macro.categories)
     const index = push({
       name: macro.name,
@@ -307,7 +312,7 @@ export function buildFlowData(
   // Coluna 3: categorias de cada macro, mantidas agrupadas por macro.
   let leafCount = 0
   macros.forEach((macro, i) => {
-    const macroIndex = macroIndexes[i]
+    const parentIndex = macroIndexes[i]
     for (const entry of macro.categories) {
       const index = push({
         name: entry.name,
@@ -316,7 +321,7 @@ export function buildFlowData(
         kind: "category",
       })
       links.push({
-        source: macroIndex,
+        source: parentIndex,
         target: index,
         value: entry.value,
         color: entry.color,
