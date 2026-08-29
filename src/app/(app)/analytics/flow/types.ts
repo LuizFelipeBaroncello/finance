@@ -43,6 +43,13 @@ export type FlowTotals = {
   orphans: FlowEntry[]
 }
 
+/**
+ * Ordem das categorias na coluna final. "default" mantém o agrupamento por
+ * macro categoria; as outras ordenam por valor. Só tem efeito com as macros
+ * escondidas — com elas visíveis a coluna precisa seguir o agrupamento.
+ */
+export type FlowSort = "default" | "desc" | "asc"
+
 export type FlowNodeKind =
   | "income"
   | "hub"
