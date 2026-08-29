@@ -5,6 +5,7 @@ import type {
   FlowLink,
   FlowMacro,
   FlowNode,
+  FlowSort,
   FlowTotals,
   FlowTransaction,
 } from "../types"
@@ -217,7 +218,8 @@ export function allFlowKeys(totals: FlowTotals): Set<string> {
  * dos totais, considerando apenas as categorias selecionadas.
  *
  * Com `showMacros` desligado a coluna das macros some e as categorias saem
- * direto da Renda Total, mantendo a cor e a ordem do macro a que pertencem.
+ * direto da Renda Total, mantendo a cor do macro a que pertencem; aí `sort`
+ * pode reordená-las por valor em vez de mantê-las agrupadas por macro.
  *
  * Quando sobra dinheiro, o excedente vira o nó "Sobra"; quando falta, um nó
  * "Déficit" alimenta a Renda Total, mantendo entrada e saída equilibradas.
@@ -225,7 +227,8 @@ export function allFlowKeys(totals: FlowTotals): Set<string> {
 export function buildFlowData(
   totals: FlowTotals,
   selected: Set<string>,
-  showMacros = true
+  showMacros = true,
+  sort: FlowSort = "default"
 ): FlowData {
   const income = totals.income.filter((e) => selected.has(e.key))
   const macros = totals.macros
@@ -309,29 +312,21 @@ export function buildFlowData(
     return index
   })
 
-  // Coluna 3: categorias de cada macro, mantidas agrupadas por macro.
-  let leafCount = 0
-  macros.forEach((macro, i) => {
-    const parentIndex = macroIndexes[i]
-    for (const entry of macro.categories) {
-      const index = push({
-        name: entry.name,
-        value: entry.value,
-        color: entry.color,
-        kind: "category",
-      })
-      links.push({
-        source: parentIndex,
-        target: index,
-        value: entry.value,
-        color: entry.color,
-      })
-      leafCount += 1
-    }
-  })
+  // Coluna 3: as categorias. Por padrão saem agrupadas por macro, com as
+  // despesas sem macro (ligadas direto à Renda Total) no fim.
+  const leaves = macros.flatMap((macro, i) =>
+    macro.categories.map((entry) => ({ entry, parentIndex: macroIndexes[i] }))
+  )
+  for (const entry of orphans) leaves.push({ entry, parentIndex: hubIndex })
 
-  // Despesas sem macro viram folhas ligadas direto à Renda Total.
-  for (const entry of orphans) {
+  // Sem as macros na tela o agrupamento deixa de importar, então dá para
+  // ordenar a coluna inteira por valor.
+  if (!showMacros && sort !== "default") {
+    const direction = sort === "desc" ? -1 : 1
+    leaves.sort((a, b) => direction * (a.entry.value - b.entry.value))
+  }
+
+  for (const { entry, parentIndex } of leaves) {
     const index = push({
       name: entry.name,
       value: entry.value,
@@ -339,15 +334,16 @@ export function buildFlowData(
       kind: "category",
     })
     links.push({
-      source: hubIndex,
+      source: parentIndex,
       target: index,
       value: entry.value,
       color: entry.color,
     })
-    leafCount += 1
   }
+  const leafCount = leaves.length
 
-  if (sobra > 0) {
+  const hasLeftover = sobra > 0
+  if (hasLeftover) {
     const index = push({
       name: LEFTOVER_LABEL,
       value: sobra,
@@ -360,8 +356,14 @@ export function buildFlowData(
       value: sobra,
       color: LEFTOVER_COLOR,
     })
-    leafCount += 1
   }
 
-  return { nodes, links, totalReceitas, totalDespesas, sobra, leafCount }
+  return {
+    nodes,
+    links,
+    totalReceitas,
+    totalDespesas,
+    sobra,
+    leafCount: leafCount + (hasLeftover ? 1 : 0),
+  }
 }

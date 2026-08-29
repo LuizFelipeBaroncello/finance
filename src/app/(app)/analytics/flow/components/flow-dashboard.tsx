@@ -1,20 +1,39 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Layers } from "lucide-react"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Layers } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Money } from "@/lib/currency"
 import { SankeyFlowChart } from "./sankey-flow-chart"
 import { CategorySelector } from "./category-selector"
 import { allFlowKeys, buildFlowData } from "../lib/flow-aggregations"
-import type { FlowTotals } from "../types"
+import type { FlowSort, FlowTotals } from "../types"
+
+const SORT_OPTIONS: Array<{
+  value: FlowSort
+  label: string
+  title: string
+  icon?: typeof ArrowDownWideNarrow
+}> = [
+  {
+    value: "default",
+    label: "Padrão",
+    title: "Agrupadas por macro categoria",
+  },
+  {
+    value: "desc",
+    label: "Maior",
+    title: "Do maior para o menor valor",
+    icon: ArrowDownWideNarrow,
+  },
+  {
+    value: "asc",
+    label: "Menor",
+    title: "Do menor para o maior valor",
+    icon: ArrowUpNarrowWide,
+  },
+]
 
 function SummaryCard({
   title,
@@ -45,10 +64,11 @@ export function FlowDashboard({ totals }: FlowDashboardProps) {
   const [selected, setSelected] = useState(() => allFlowKeys(totals))
   // Desligado, o gráfico liga a Renda Total direto nas categorias.
   const [showMacros, setShowMacros] = useState(true)
+  const [sort, setSort] = useState<FlowSort>("default")
 
   const flow = useMemo(
-    () => buildFlowData(totals, selected, showMacros),
-    [totals, selected, showMacros]
+    () => buildFlowData(totals, selected, showMacros, sort),
+    [totals, selected, showMacros, sort]
   )
 
   const positivo = flow.sobra >= 0
@@ -85,9 +105,38 @@ export function FlowDashboard({ totals }: FlowDashboardProps) {
       </div>
 
       <Card>
-        <CardHeader>
+        {/* flex em vez do grid padrão do CardHeader: em telas estreitas os
+            controles quebram para baixo do título em vez de espremê-lo. */}
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-base">Fluxo do Período</CardTitle>
-          <CardAction>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Sem as macros o agrupamento some, então a ordem passa a ser
+                escolha do usuário. */}
+            {!showMacros && (
+              <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5">
+                {SORT_OPTIONS.map((opt) => {
+                  const Icon = opt.icon
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      title={opt.title}
+                      aria-pressed={sort === opt.value}
+                      onClick={() => setSort(opt.value)}
+                      className={cn(
+                        "flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors",
+                        sort === opt.value
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {Icon && <Icon className="size-3.5" />}
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             <button
               type="button"
               aria-pressed={showMacros}
@@ -102,7 +151,7 @@ export function FlowDashboard({ totals }: FlowDashboardProps) {
               <Layers className="size-3.5" />
               Ver macros
             </button>
-          </CardAction>
+          </div>
         </CardHeader>
         <CardContent className="pl-2">
           <SankeyFlowChart data={flow} />
