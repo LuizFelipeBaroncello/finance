@@ -113,6 +113,8 @@ export default async function AnalyticsPage({
         transactions={txs}
         categories={uniqueCategories}
         granularity={granularity}
+        startDate={startDate}
+        endDate={endDate}
       />
     </div>
   )

@@ -7,6 +7,7 @@ import { CategoryChart } from "./category-chart"
 import { TypeChart } from "./type-chart"
 import { AccountChart } from "./account-chart"
 import { SeriesEvolutionChart } from "./series-evolution-chart"
+import { DailyCalendarChart } from "./daily-calendar-chart"
 import { TransactionList } from "./transaction-list"
 import {
   groupByPeriod,
@@ -24,12 +25,16 @@ interface AnalyticsDashboardProps {
   transactions: Transaction[]
   categories: string[]
   granularity: string
+  startDate: string
+  endDate: string
 }
 
 export function AnalyticsDashboard({
   transactions,
   categories,
   granularity,
+  startDate,
+  endDate,
 }: AnalyticsDashboardProps) {
   const formatBRL = useFormatBRL()
   const [search, setSearch] = useState("")
@@ -168,6 +173,20 @@ export function AnalyticsDashboard({
           </CardContent>
         </Card>
       </div>
+
+      {/* Calendário diário */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Por Dia</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DailyCalendarChart
+            transactions={filteredForCharts}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </CardContent>
+      </Card>
 
       {/* Evolução Receitas / Despesas / Saldo */}
       <Card>
