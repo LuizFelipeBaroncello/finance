@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,12 +16,27 @@ import { cn } from "@/lib/utils"
 import { useCurrencyVisibility, MASK } from "@/lib/currency"
 import {
   buildCalendar,
+  buildMonthCells,
+  buildYearCells,
+  cellLabel,
   formatDayLong,
+  monthRange,
+  summarize,
   WEEKDAY_LABELS,
+  yearRange,
+  yearsInHistory,
   type CalendarMode,
-  type DayCell,
-} from "../lib/daily-calendar"
+  type CalendarScale,
+  type GridCell,
+  type MonthTotal,
+} from "../lib/calendar"
 import type { Transaction } from "../types"
+
+const SCALES: Array<{ value: CalendarScale; label: string }> = [
+  { value: "day", label: "Dia" },
+  { value: "month", label: "Mês" },
+  { value: "year", label: "Ano" },
+]
 
 const MODES: Array<{ value: CalendarMode; label: string }> = [
   { value: "out", label: "Só saídas" },
@@ -52,7 +68,7 @@ function percent(value: number, total: number) {
 }
 
 /**
- * Alpha ramp for the heat scale. The exponent lifts small days out of the
+ * Alpha ramp for the heat scale. The exponent lifts small cells out of the
  * background without letting them rival the peak.
  */
 function intensity(value: number, max: number) {
@@ -77,25 +93,58 @@ function ShortMoney({ value, hidden }: { value: number; hidden: boolean }) {
   )
 }
 
-interface DailyCalendarChartProps {
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+        {label}
+      </p>
+      <p className="mt-0.5 text-sm font-semibold tabular-nums">{value}</p>
+    </div>
+  )
+}
+
+interface CalendarChartProps {
+  /** Period-scoped and already filtered by the dashboard's search/category. */
   transactions: Transaction[]
+  /** Whole-history month totals, for the month and year scales. */
+  monthlyTotals: MonthTotal[]
   startDate: string
   endDate: string
 }
 
-export function DailyCalendarChart({
+export function CalendarChart({
   transactions,
+  monthlyTotals,
   startDate,
   endDate,
-}: DailyCalendarChartProps) {
+}: CalendarChartProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { hidden } = useCurrencyVisibility()
+
+  const [scale, setScale] = useState<CalendarScale>("day")
   const [mode, setMode] = useState<CalendarMode>("out")
   const [monthKey, setMonthKey] = useState<string | null>(null)
-  const [selected, setSelected] = useState<DayCell | null>(null)
+  const [yearKey, setYearKey] = useState<number | null>(null)
+  const [selected, setSelected] = useState<GridCell | null>(null)
 
   const money = (value: number) => (hidden ? MASK : fullBRL(value))
   const moneyShort = (value: number) => (hidden ? MASK : compactBRL(value))
 
+  /** Re-scopes the whole analytics page to a new period. */
+  const goToPeriod = useCallback(
+    (range: { startDate: string; endDate: string }, granularity: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("startDate", range.startDate)
+      params.set("endDate", range.endDate)
+      params.set("granularity", granularity)
+      router.push(`/analytics?${params.toString()}`)
+    },
+    [router, searchParams]
+  )
+
+  // --- Day scale: one grid per month of the selected period -----------------
   const months = useMemo(
     () => buildCalendar(transactions, startDate, endDate),
     [transactions, startDate, endDate]
@@ -103,63 +152,176 @@ export function DailyCalendarChart({
 
   // Open on the most recent month that has movement, so a full-year period
   // doesn't land on an empty grid.
-  const defaultKey = useMemo(() => {
-    const withMovement = [...months]
-      .reverse()
-      .find((m) => m.diasComMovimento > 0)
+  const defaultMonthKey = useMemo(() => {
+    const withMovement = [...months].reverse().find((m) => m.summary.comMovimento > 0)
     return (withMovement ?? months[months.length - 1])?.key
   }, [months])
 
-  const activeKey =
-    monthKey && months.some((m) => m.key === monthKey) ? monthKey : defaultKey
-  const activeIndex = months.findIndex((m) => m.key === activeKey)
-  const bucket = months[activeIndex] ?? months[0]
+  const activeMonthKey =
+    monthKey && months.some((m) => m.key === monthKey) ? monthKey : defaultMonthKey
+  const monthIndex = months.findIndex((m) => m.key === activeMonthKey)
+  const bucket = months[monthIndex] ?? months[0]
+
+  // --- Month scale: the 12 months of a year --------------------------------
+  const years = useMemo(() => yearsInHistory(monthlyTotals), [monthlyTotals])
+  const periodYear = Number(startDate.substring(0, 4))
+  const activeYear =
+    yearKey && years.includes(yearKey)
+      ? yearKey
+      : years.includes(periodYear)
+        ? periodYear
+        : (years[years.length - 1] ?? periodYear)
+  const yearIndex = years.indexOf(activeYear)
+
+  const monthCells = useMemo(
+    () => buildMonthCells(monthlyTotals, activeYear),
+    [monthlyTotals, activeYear]
+  )
+
+  // --- Year scale: the whole history ---------------------------------------
+  const yearCells = useMemo(() => buildYearCells(monthlyTotals), [monthlyTotals])
+
+  // --- Active grid ----------------------------------------------------------
+  const cells = useMemo(() => {
+    if (scale === "day") return bucket?.cells ?? []
+    return scale === "month" ? monthCells : yearCells
+  }, [scale, bucket, monthCells, yearCells])
+
+  const summary = useMemo(
+    () => (scale === "day" ? bucket?.summary : summarize(cells)),
+    [scale, bucket, cells]
+  )
 
   const dayTransactions = useMemo(() => {
-    if (!selected) return []
+    if (!selected?.date) return []
+    const date = selected.date
     return transactions
-      .filter((t) => t.type !== "transfer" && t.date.substring(0, 10) === selected.date)
+      .filter((t) => t.type !== "transfer" && t.date.substring(0, 10) === date)
       .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
   }, [transactions, selected])
 
-  if (!bucket) return null
+  if (!summary) return null
 
   const onlyOut = mode === "out"
-  const headline = onlyOut ? bucket.totalSaidas : bucket.totalSaldo
-  const headlineDays = onlyOut ? bucket.diasComSaida : bucket.diasComMovimento
-  const mediaBase = bucket.days.filter((d) => d.inRange).length || 1
+  const headline = onlyOut ? summary.totalSaidas : summary.totalSaldo
+  const headlineCount = onlyOut ? summary.comSaida : summary.comMovimento
+  const mediaBase = summary.ativos || 1
+
+  const unit =
+    scale === "day"
+      ? { one: "dia", many: "dias", cap: "por dia" }
+      : scale === "month"
+        ? { one: "mês", many: "meses", cap: "por mês" }
+        : { one: "ano", many: "anos", cap: "por ano" }
+
+  const scopeLabel =
+    scale === "day"
+      ? bucket.label
+      : scale === "month"
+        ? String(activeYear)
+        : years.length > 0
+          ? `${years[0]} – ${years[years.length - 1]}`
+          : "sem histórico"
+
+  const subtitle = onlyOut
+    ? `quanto saiu em cada ${unit.one}`
+    : `entradas e saídas de cada ${unit.one}`
+
+  /** Clicking a cell drills down: year → months → days → transactions. */
+  const handleCellClick = (cell: GridCell) => {
+    if (scale === "day") {
+      setSelected(cell)
+      return
+    }
+    if (scale === "month") {
+      const [y, m] = cell.key.split("-").map(Number)
+      setScale("day")
+      setMonthKey(null)
+      goToPeriod(monthRange(y, m), "daily")
+      return
+    }
+    const year = Number(cell.key)
+    setYearKey(year)
+    setScale("month")
+    goToPeriod(yearRange(year), "monthly")
+  }
+
+  const navigation =
+    scale === "day" && months.length > 1
+      ? {
+          label: `${monthIndex + 1}/${months.length}`,
+          prevLabel: "Mês anterior",
+          nextLabel: "Próximo mês",
+          canPrev: monthIndex > 0,
+          canNext: monthIndex < months.length - 1,
+          onPrev: () => setMonthKey(months[monthIndex - 1]?.key ?? null),
+          onNext: () => setMonthKey(months[monthIndex + 1]?.key ?? null),
+        }
+      : scale === "month" && years.length > 1
+        ? {
+            label: String(activeYear),
+            prevLabel: "Ano anterior",
+            nextLabel: "Próximo ano",
+            canPrev: yearIndex > 0,
+            canNext: yearIndex < years.length - 1,
+            onPrev: () => setYearKey(years[yearIndex - 1] ?? null),
+            onNext: () => setYearKey(years[yearIndex + 1] ?? null),
+          }
+        : null
+
+  const gridClass =
+    scale === "day"
+      ? "grid-cols-7"
+      : scale === "month"
+        ? "grid-cols-3 sm:grid-cols-4"
+        : "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5"
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Header: title, mode toggle and month navigation */}
+      {/* Header: scope, headline, scale/mode toggles and navigation */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">
-            {bucket.label} ·{" "}
-            {onlyOut ? "quanto saiu em cada dia" : "entradas e saídas de cada dia"}
+            {scopeLabel} · {subtitle}
           </p>
           <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span
               className={cn(
                 "text-3xl font-semibold tracking-tight tabular-nums",
-                onlyOut
-                  ? "text-foreground"
-                  : headline >= 0
-                    ? "text-green-500"
-                    : "text-red-500"
+                onlyOut ? "text-foreground" : headline >= 0 ? "text-green-500" : "text-red-500"
               )}
             >
               {money(headline)}
             </span>
             <span className="text-sm text-muted-foreground">
               {onlyOut
-                ? `em ${headlineDays} ${headlineDays === 1 ? "dia" : "dias"} com saída`
-                : `saldo em ${headlineDays} ${headlineDays === 1 ? "dia" : "dias"} com movimento`}
+                ? `em ${headlineCount} ${headlineCount === 1 ? unit.one : unit.many} com saída`
+                : `saldo em ${headlineCount} ${headlineCount === 1 ? unit.one : unit.many} com movimento`}
             </span>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border p-1">
+            {SCALES.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setScale(opt.value)
+                  setSelected(null)
+                }}
+                className={cn(
+                  "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  scale === opt.value
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           <div className="flex items-center gap-0.5 rounded-lg border border-border p-1">
             {MODES.map((opt) => (
               <button
@@ -177,28 +339,28 @@ export function DailyCalendarChart({
             ))}
           </div>
 
-          {months.length > 1 && (
+          {navigation && (
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                aria-label="Mês anterior"
-                disabled={activeIndex <= 0}
-                onClick={() => setMonthKey(months[activeIndex - 1]?.key ?? null)}
+                aria-label={navigation.prevLabel}
+                disabled={!navigation.canPrev}
+                onClick={navigation.onPrev}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="min-w-8 text-center text-xs font-medium tabular-nums text-muted-foreground">
-                {activeIndex + 1}/{months.length}
+              <span className="min-w-10 text-center text-xs font-medium tabular-nums text-muted-foreground">
+                {navigation.label}
               </span>
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                aria-label="Próximo mês"
-                disabled={activeIndex >= months.length - 1}
-                onClick={() => setMonthKey(months[activeIndex + 1]?.key ?? null)}
+                aria-label={navigation.nextLabel}
+                disabled={!navigation.canNext}
+                onClick={navigation.onNext}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -207,51 +369,53 @@ export function DailyCalendarChart({
         </div>
       </div>
 
-      {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-        {WEEKDAY_LABELS.map((label) => (
-          <div
-            key={label}
-            className="px-1 text-[10px] font-medium tracking-wider text-muted-foreground"
-          >
-            {label}
-          </div>
-        ))}
+      {/* Grid */}
+      <div className={cn("grid gap-1.5 sm:gap-2", gridClass)}>
+        {scale === "day" && (
+          <>
+            {WEEKDAY_LABELS.map((label) => (
+              <div
+                key={label}
+                className="px-1 text-[10px] font-medium tracking-wider text-muted-foreground"
+              >
+                {label}
+              </div>
+            ))}
+            {Array.from({ length: bucket.leadingBlanks }).map((_, i) => (
+              <div key={`blank-${i}`} aria-hidden />
+            ))}
+          </>
+        )}
 
-        {Array.from({ length: bucket.leadingBlanks }).map((_, i) => (
-          <div key={`blank-${i}`} aria-hidden />
-        ))}
-
-        {bucket.days.map((cell) => {
-          const value = onlyOut ? cell.saidas : cell.saldo
+        {cells.map((cell) => {
           const positive = !onlyOut && cell.saldo > 0
           const alpha = onlyOut
-            ? intensity(cell.saidas, bucket.maxSaida)
-            : intensity(Math.abs(cell.saldo), bucket.maxAbsSaldo)
+            ? intensity(cell.saidas, summary.maxSaida)
+            : intensity(Math.abs(cell.saldo), summary.maxAbsSaldo)
           const empty = onlyOut ? cell.saidas === 0 : cell.count === 0
-          const isSelected = selected?.date === cell.date
+          const isSelected = selected?.key === cell.key
+          const clickable = cell.inRange && cell.count > 0
 
-          const saidaPct = percent(cell.saidas, bucket.totalSaidas)
-          const entradaPct = percent(cell.entradas, bucket.totalEntradas)
+          const saidaPct = percent(cell.saidas, summary.totalSaidas)
+          const entradaPct = percent(cell.entradas, summary.totalEntradas)
 
           return (
             <button
-              key={cell.date}
+              key={cell.key}
               type="button"
-              disabled={!cell.inRange || cell.count === 0}
-              onClick={() => setSelected(cell)}
+              disabled={!clickable}
+              onClick={() => handleCellClick(cell)}
               title={
                 cell.count === 0
                   ? undefined
-                  : `${formatDayLong(cell.date)} — entrou ${money(cell.entradas)} · saiu ${money(cell.saidas)}`
+                  : `${cell.date ? formatDayLong(cell.date) : cell.label} — entrou ${money(cell.entradas)} · saiu ${money(cell.saidas)}`
               }
               className={cn(
                 "flex min-h-16 flex-col justify-between gap-1 overflow-hidden rounded-lg border border-transparent p-1.5 text-left transition-all duration-150 sm:min-h-20 sm:p-2",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 empty && "bg-muted/40",
                 !cell.inRange && "opacity-30",
-                cell.inRange &&
-                  cell.count > 0 &&
+                clickable &&
                   "cursor-pointer hover:-translate-y-0.5 hover:border-foreground/25 hover:shadow-md hover:brightness-125",
                 isSelected && "border-foreground/60 shadow-md"
               )}
@@ -263,7 +427,7 @@ export function DailyCalendarChart({
                   empty ? "text-muted-foreground" : "font-medium text-foreground"
                 )}
               >
-                {cell.day}
+                {cell.label}
               </span>
 
               {onlyOut ? (
@@ -299,8 +463,6 @@ export function DailyCalendarChart({
               ) : (
                 <span className="text-[11px] text-muted-foreground sm:text-xs">–</span>
               )}
-
-              {value !== 0 && <span className="sr-only">{money(Math.abs(value))}</span>}
             </button>
           )
         })}
@@ -310,34 +472,32 @@ export function DailyCalendarChart({
       <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4">
         <div className="flex flex-wrap gap-x-10 gap-y-3">
           <Stat
-            label={onlyOut ? "Média por dia" : "Saldo médio/dia"}
-            value={money((onlyOut ? bucket.totalSaidas : bucket.totalSaldo) / mediaBase)}
+            label={onlyOut ? `Média ${unit.cap}` : `Saldo médio/${unit.one}`}
+            value={money((onlyOut ? summary.totalSaidas : summary.totalSaldo) / mediaBase)}
           />
           <Stat
-            label={onlyOut ? "Maior saída" : "Maior entrada"}
-            value={
-              onlyOut
-                ? bucket.maiorSaida
-                  ? `${bucket.maiorSaida.day}/${String(bucket.month).padStart(2, "0")} · ${moneyShort(bucket.maiorSaida.saidas)}`
-                  : "–"
-                : bucket.maiorEntrada
-                  ? `${bucket.maiorEntrada.day}/${String(bucket.month).padStart(2, "0")} · ${moneyShort(bucket.maiorEntrada.entradas)}`
-                  : "–"
-            }
+            label={onlyOut ? `Maior ${unit.one}` : "Maior entrada"}
+            value={(() => {
+              const cell = onlyOut ? summary.maiorSaida : summary.maiorEntrada
+              if (!cell) return "–"
+              return `${cellLabel(cell)} · ${moneyShort(onlyOut ? cell.saidas : cell.entradas)}`
+            })()}
           />
           <Stat
-            label={onlyOut ? "Dias sem saída" : "Dias sem movimento"}
+            label={onlyOut ? `${unit.many} sem saída` : `${unit.many} sem movimento`}
             value={String(
-              onlyOut
-                ? bucket.diasSemSaida
-                : bucket.days.filter((d) => d.inRange).length - bucket.diasComMovimento
+              onlyOut ? summary.ativos - summary.comSaida : summary.ativos - summary.comMovimento
             )}
           />
-          {!onlyOut && <Stat label="Entradas no mês" value={money(bucket.totalEntradas)} />}
-          {!onlyOut && <Stat label="Saídas no mês" value={money(bucket.totalSaidas)} />}
+          {!onlyOut && <Stat label="Total de entradas" value={money(summary.totalEntradas)} />}
+          {!onlyOut && <Stat label="Total de saídas" value={money(summary.totalSaidas)} />}
         </div>
         <p className="text-xs text-muted-foreground">
-          Clique num dia para ver as transações
+          {scale === "day"
+            ? "Clique num dia para ver as transações"
+            : scale === "month"
+              ? "Clique num mês para abrir os dias"
+              : "Clique num ano para abrir os meses"}
         </p>
       </div>
 
@@ -346,16 +506,18 @@ export function DailyCalendarChart({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="first-letter:uppercase">
-              {selected ? formatDayLong(selected.date) : ""}
+              {selected?.date ? formatDayLong(selected.date) : ""}
             </DialogTitle>
             <DialogDescription>
               {selected && (
                 <span className="flex flex-wrap gap-x-4 gap-y-1">
                   <span className="text-green-500">
-                    Entradas {money(selected.entradas)} ({percent(selected.entradas, bucket.totalEntradas)} do mês)
+                    Entradas {money(selected.entradas)} (
+                    {percent(selected.entradas, summary.totalEntradas)} do mês)
                   </span>
                   <span className="text-red-500">
-                    Saídas {money(selected.saidas)} ({percent(selected.saidas, bucket.totalSaidas)} do mês)
+                    Saídas {money(selected.saidas)} (
+                    {percent(selected.saidas, summary.totalSaidas)} do mês)
                   </span>
                 </span>
               )}
@@ -374,11 +536,7 @@ export function DailyCalendarChart({
                     {(t.re_category_transaction ?? []).map(
                       (rc) =>
                         rc.category?.category_name && (
-                          <Badge
-                            key={rc.category_id}
-                            variant="secondary"
-                            className="text-[10px]"
-                          >
+                          <Badge key={rc.category_id} variant="secondary" className="text-[10px]">
                             {rc.category.category_name}
                           </Badge>
                         )
@@ -397,24 +555,11 @@ export function DailyCalendarChart({
               </div>
             ))}
             {dayTransactions.length === 0 && (
-              <p className="py-4 text-sm text-muted-foreground">
-                Nenhuma transação neste dia.
-              </p>
+              <p className="py-4 text-sm text-muted-foreground">Nenhuma transação neste dia.</p>
             )}
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p className="mt-0.5 text-sm font-semibold tabular-nums">{value}</p>
     </div>
   )
 }

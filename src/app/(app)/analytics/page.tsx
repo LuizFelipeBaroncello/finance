@@ -1,7 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
 import { PeriodFilter } from "./components/period-filter"
 import { AnalyticsDashboard } from "./components/analytics-dashboard"
+import { aggregateMonthlyTotals, type MonthlyInput } from "./lib/calendar"
 import type { Transaction } from "./types"
+
+// PostgREST caps how many rows one request may return, so the history is read
+// in pages. The page cap bounds the loop if the API ever stops shrinking pages.
+const HISTORY_PAGE_SIZE = 1000
+const HISTORY_MAX_PAGES = 50
 
 function getDefaultGranularity(startDate: string, endDate: string) {
   const start = new Date(startDate)
@@ -86,6 +92,27 @@ export default async function AnalyticsPage({
 
   const txs = (data ?? []) as unknown as Transaction[]
 
+  // Whole-history month totals feed the calendar's "Mês" and "Ano" scales.
+  // Only the three columns the aggregation needs are fetched, paginated so a
+  // PostgREST row cap can't silently truncate the history, and collapsed to
+  // one row per month before any of it reaches the client.
+  const history: MonthlyInput[] = []
+  for (let page = 0; page < HISTORY_MAX_PAGES; page++) {
+    const from = page * HISTORY_PAGE_SIZE
+    const { data: rows, error } = await supabase
+      .from("transaction")
+      .select("date, amount, type")
+      .eq("is_provisional", false)
+      .order("date", { ascending: true })
+      .range(from, from + HISTORY_PAGE_SIZE - 1)
+
+    if (error || !rows?.length) break
+    history.push(...(rows as unknown as MonthlyInput[]))
+    if (rows.length < HISTORY_PAGE_SIZE) break
+  }
+
+  const monthlyTotals = aggregateMonthlyTotals(history)
+
   const uniqueCategories = Array.from(
     new Set(
       txs.flatMap((t) =>
@@ -115,6 +142,7 @@ export default async function AnalyticsPage({
         granularity={granularity}
         startDate={startDate}
         endDate={endDate}
+        monthlyTotals={monthlyTotals}
       />
     </div>
   )

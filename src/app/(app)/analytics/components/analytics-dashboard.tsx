@@ -7,7 +7,7 @@ import { CategoryChart } from "./category-chart"
 import { TypeChart } from "./type-chart"
 import { AccountChart } from "./account-chart"
 import { SeriesEvolutionChart } from "./series-evolution-chart"
-import { DailyCalendarChart } from "./daily-calendar-chart"
+import { CalendarChart } from "./calendar-chart"
 import { TransactionList } from "./transaction-list"
 import {
   groupByPeriod,
@@ -18,6 +18,7 @@ import {
   getCategoryNames,
 } from "../lib/aggregations"
 import { applyCategoryFilter } from "../lib/category-filter"
+import type { MonthTotal } from "../lib/calendar"
 import type { CategoryFilter, Transaction } from "../types"
 import { useFormatBRL } from "@/lib/currency"
 
@@ -27,6 +28,7 @@ interface AnalyticsDashboardProps {
   granularity: string
   startDate: string
   endDate: string
+  monthlyTotals: MonthTotal[]
 }
 
 export function AnalyticsDashboard({
@@ -35,6 +37,7 @@ export function AnalyticsDashboard({
   granularity,
   startDate,
   endDate,
+  monthlyTotals,
 }: AnalyticsDashboardProps) {
   const formatBRL = useFormatBRL()
   const [search, setSearch] = useState("")
@@ -174,14 +177,15 @@ export function AnalyticsDashboard({
         </Card>
       </div>
 
-      {/* Calendário diário */}
+      {/* Calendário: dia, mês e histórico completo */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Por Dia</CardTitle>
+          <CardTitle className="text-base">Calendário</CardTitle>
         </CardHeader>
         <CardContent>
-          <DailyCalendarChart
+          <CalendarChart
             transactions={filteredForCharts}
+            monthlyTotals={monthlyTotals}
             startDate={startDate}
             endDate={endDate}
           />
