@@ -66,7 +66,7 @@ export default async function AnalyticsComparePage({
     specs.map((spec) =>
       supabase
         .from("transaction")
-        .select("date, amount, type")
+        .select("trans_id, description, date, amount, type")
         .eq("is_provisional", false)
         .gte("date", spec.startDate)
         .lte("date", spec.endDate)

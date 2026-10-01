@@ -9,6 +9,7 @@ import {
   buildComparisonData,
   summarizeRange,
 } from "../lib/compare-aggregations"
+import { CompareTransactionList } from "./compare-transaction-list"
 import { SubperiodModal } from "./subperiod-modal"
 import type {
   CompareGranularity,
@@ -32,9 +33,33 @@ export function ComparisonDashboard({
 }: ComparisonDashboardProps) {
   const formatBRL = useFormatBRL()
 
+  const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set())
+
+  const handleToggleHidden = useCallback((id: number) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const handleClearHidden = useCallback(() => setHiddenIds(new Set()), [])
+
+  const visiblePeriods = useMemo(
+    () =>
+      hiddenIds.size === 0
+        ? periods
+        : periods.map((p) => ({
+            ...p,
+            transactions: p.transactions.filter((t) => !hiddenIds.has(t.trans_id)),
+          })),
+    [periods, hiddenIds]
+  )
+
   const { data, seriesKeys, totals, series } = useMemo(
-    () => buildComparisonData(periods, type, granularity, metric),
-    [periods, type, granularity, metric]
+    () => buildComparisonData(visiblePeriods, type, granularity, metric),
+    [visiblePeriods, type, granularity, metric]
   )
 
   const [range, setRange] = useState<{ from: number; to: number } | null>(null)
@@ -52,6 +77,7 @@ export function ComparisonDashboard({
   }, [range, data, series])
 
   return (
+    <div className="flex flex-col gap-6">
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">
@@ -95,5 +121,12 @@ export function ComparisonDashboard({
         />
       )}
     </Card>
+    <CompareTransactionList
+      periods={periods}
+      hiddenIds={hiddenIds}
+      onToggleHidden={handleToggleHidden}
+      onClearHidden={handleClearHidden}
+    />
+    </div>
   )
 }
