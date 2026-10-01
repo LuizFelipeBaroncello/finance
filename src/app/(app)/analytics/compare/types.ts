@@ -12,6 +12,8 @@ export type PeriodSpec = {
 }
 
 export type CompareTransaction = {
+  trans_id: number
+  description: string
   date: string
   amount: number
   type: "debit" | "credit" | "transfer"
