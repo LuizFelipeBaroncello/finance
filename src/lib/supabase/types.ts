@@ -379,6 +379,126 @@ export type Database = {
           }
         ]
       }
+      free_spending_plan: {
+        Row: {
+          free_spending_plan_id: number
+          client_id: number
+          start_date: string
+          monthly_amount: number
+          pay_day: number
+          daily_estimate: number
+          warning_pct: number
+          macro_category_ids: number[]
+          category_ids: number[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          free_spending_plan_id?: number
+          client_id: number
+          start_date: string
+          monthly_amount: number
+          pay_day: number
+          daily_estimate?: number
+          warning_pct?: number
+          macro_category_ids?: number[]
+          category_ids?: number[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          free_spending_plan_id?: number
+          client_id?: number
+          start_date?: string
+          monthly_amount?: number
+          pay_day?: number
+          daily_estimate?: number
+          warning_pct?: number
+          macro_category_ids?: number[]
+          category_ids?: number[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_spending_plan_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "client"
+            referencedColumns: ["client_id"]
+          }
+        ]
+      }
+      free_spending_month: {
+        Row: {
+          free_spending_month_id: number
+          client_id: number
+          month: string
+          amount: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          free_spending_month_id?: number
+          client_id: number
+          month: string
+          amount: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          free_spending_month_id?: number
+          client_id?: number
+          month?: string
+          amount?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_spending_month_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "client"
+            referencedColumns: ["client_id"]
+          }
+        ]
+      }
+      free_spending_planned: {
+        Row: {
+          free_spending_planned_id: number
+          client_id: number
+          date: string
+          description: string
+          amount: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          free_spending_planned_id?: number
+          client_id: number
+          date: string
+          description: string
+          amount: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          free_spending_planned_id?: number
+          client_id?: number
+          date?: string
+          description?: string
+          amount?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_spending_planned_client_id_fkey"
+            columns: ["client_id"]
+            referencedRelation: "client"
+            referencedColumns: ["client_id"]
+          }
+        ]
+      }
       institution: {
         Row: {
           institution_id: number

@@ -20,6 +20,7 @@ import {
   GitCompareArrows,
   Waypoints,
   Target,
+  CalendarRange,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ const NAV: NavItem[] = [
     ],
   },
   { label: "Metas", href: "/goals", icon: Target },
+  { label: "Horizonte", href: "/horizon", icon: CalendarRange },
   {
     label: "Configurações",
     icon: Building2,
